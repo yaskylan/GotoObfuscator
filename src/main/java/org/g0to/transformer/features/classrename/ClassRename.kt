@@ -22,8 +22,14 @@ class ClassRename(
         val exclude: ExcludeManager.ExcludeSetting? = null,
         @SerializedName("mappingPath")
         val mappingPath: String = "mapping.txt",
+        @SerializedName("renameClass")
+        val renameClass: Boolean = true,
+        @SerializedName("renameField")
+        val renameField: Boolean = true,
+        @SerializedName("renameMethod")
+        val renameMethod: Boolean = true,
         @SerializedName("renameMain")
-        val renameMain: Boolean = false
+        val renameMain: Boolean = false,
     ) : TransformerBaseSetting()
 
     private val excludeManager = ExcludeManager((setting as Setting).exclude)
@@ -40,6 +46,7 @@ class ClassRename(
 
     private fun rename(core: Core) {
         val classDictionary = core.conf.dictionary.newDictionary()
+        val fieldDictionary = core.conf.dictionary.newDictionary()
 
         for (classStruct in classTree.classes.values) {
             if (classStruct.isExternal()) {
@@ -47,6 +54,10 @@ class ClassRename(
             }
 
             renameClass(classStruct, classDictionary)
+
+            for (field in classStruct.fields.values) {
+                renameField(field, fieldDictionary)
+            }
         }
     }
 
@@ -76,8 +87,25 @@ class ClassRename(
         }
     }
 
-    private fun renameField() {
-        // TODO
+    private fun renameField(field: FieldStruct, dictionary: Dictionary) {
+        if (isEnumField(field)) {
+            return
+        }
+
+        field.mappedName = dictionary.randString()
+    }
+
+    private fun isEnumField(field: FieldStruct): Boolean {
+        if (field.owner.isEnum() && field.isStatic() && field.isFinal()) {
+            if (field.isPublic()) {
+                return field.desc().equals('L' + field.owner.getClassName() + ';')
+            } else if (field.isPrivate()) {
+                return field.name().equals("\$VALUES")
+                        && field.desc().equals("[L" + field.owner.getClassName() + ';')
+            }
+        }
+
+        return false
     }
 
     private fun renameMethod() {
