@@ -62,9 +62,7 @@ class ClassRename(
     }
 
     private fun renameClass(classStruct: ClassStruct, dictionary: Dictionary) {
-        // TODO Add exclude support
-
-        if (!classStruct.shouldRename(setting) || classStruct.hasMappedName()) {
+        if (!classStruct.shouldRename(setting) || classStruct.hasMappedName() || excludeManager.isExcludedClass(classStruct.getClassName())) {
             return
         }
 
@@ -88,7 +86,7 @@ class ClassRename(
     }
 
     private fun renameField(field: FieldStruct, dictionary: Dictionary) {
-        if (isEnumField(field)) {
+        if (isEnumField(field) || excludeManager.isExcludedField(field.owner.getClassName(), field.name(), field.desc())) {
             return
         }
 
