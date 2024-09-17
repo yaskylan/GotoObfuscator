@@ -13,6 +13,9 @@ import org.g0to.utils.Utils
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.tree.ClassNode
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 
 class NameObfuscation(
     setting: TransformerBaseSetting
@@ -30,6 +33,10 @@ class NameObfuscation(
         val renameMethod: Boolean = true,
         @SerializedName("renameMain")
         val renameMain: Boolean = false,
+        @SerializedName("multithreading")
+        val multithreading: Boolean = true,
+        @SerializedName("threadPoolSize")
+        val threadPoolSize: Int = Runtime.getRuntime().availableProcessors()
     ) : TransformerBaseSetting()
 
     private val exclusionManager = ExclusionManager((setting as Setting).exclude)
@@ -50,6 +57,44 @@ class NameObfuscation(
         val classDictionary = core.conf.dictionary.newDictionary()
         val fieldDictionary = core.conf.dictionary.newDictionary()
         val methodDictionary = core.conf.dictionary.newDictionary()
+        val relativesMethodsMap = ConcurrentHashMap<MethodStruct, HashSet<MethodStruct>>()
+
+        if (setting.renameMethod && setting.multithreading) {
+            logger.info("Using multithreading, thread pool size is ${setting.threadPoolSize}")
+
+            val executor = Executors.newFixedThreadPool(setting.threadPoolSize) as ThreadPoolExecutor
+
+            for (classStruct in classTree.classes.values) {
+                if (classStruct.isExternal()) {
+                    continue
+                }
+
+                for (method in classStruct.getMethods()) {
+                    if (!method.shouldRename()
+                        || exclusionManager.isExcludedMethod(method.owner.getClassName(), method.name(), method.desc())) {
+                        continue
+                    }
+
+                    executor.execute {
+                        relativesMethodsMap[method] = HashSet<MethodStruct>().apply {
+                            searchRelativesMethods(
+                                method.owner,
+                                method.name(),
+                                method.desc(),
+                                this,
+                                HashSet()
+                            )
+                        }
+                    }
+                }
+            }
+
+            while (executor.activeCount != 0) {
+                Thread.sleep(250)
+            }
+
+            executor.shutdown()
+        }
 
         for (classStruct in classTree.classes.values) {
             if (classStruct.isExternal()) {
@@ -61,14 +106,14 @@ class NameObfuscation(
             }
 
             if (setting.renameField) {
-                for (field in classStruct.fields.values) {
+                for (field in classStruct.getFields()) {
                     renameField(field, fieldDictionary)
                 }
             }
 
             if (setting.renameMethod) {
-                for (method in classStruct.methods.values) {
-                    renameMethod(method, methodDictionary)
+                for (method in classStruct.getMethods()) {
+                    renameMethod(method, methodDictionary, relativesMethodsMap)
                 }
             }
         }
@@ -99,30 +144,16 @@ class NameObfuscation(
     }
 
     private fun renameField(field: FieldStruct, dictionary: Dictionary) {
-        if (isEnumField(field) || exclusionManager.isExcludedField(field.owner.getClassName(), field.name(), field.desc())) {
+        if (!field.shouldRename() || exclusionManager.isExcludedField(field.owner.getClassName(), field.name(), field.desc())) {
             return
         }
 
         field.mappedName = dictionary.randString()
     }
 
-    private fun isEnumField(field: FieldStruct): Boolean {
-        if (field.owner.isEnum() && field.isStatic() && field.isFinal()) {
-            if (field.isPublic()) {
-                return field.desc().equals('L' + field.owner.getClassName() + ';')
-            } else if (field.isPrivate()) {
-                return field.name().equals("\$VALUES")
-                        && field.desc().equals("[L" + field.owner.getClassName() + ';')
-            }
-        }
-
-        return false
-    }
-
-    private fun renameMethod(method: MethodStruct, dictionary: Dictionary) {
+    private fun renameMethod(method: MethodStruct, dictionary: Dictionary, relativesMethodsMap: ConcurrentHashMap<MethodStruct, HashSet<MethodStruct>>) {
         if (method.hasMappedName()
             || !method.shouldRename()
-            || isEnumMethod(method)
             || exclusionManager.isExcludedMethod(method.owner.getClassName(), method.name(), method.desc())) {
             return
         }
@@ -132,14 +163,18 @@ class NameObfuscation(
             return
         }
 
-        val relativesMethods = HashSet<MethodStruct>().apply {
-            searchRelativesMethods(
-                method.owner,
-                method.name(),
-                method.desc(),
-                this,
-                HashSet()
-            )
+        val relativesMethods = if (relativesMethodsMap.isEmpty()) {
+            HashSet<MethodStruct>().apply {
+                searchRelativesMethods(
+                    method.owner,
+                    method.name(),
+                    method.desc(),
+                    this,
+                    HashSet()
+                )
+            }
+        } else {
+            relativesMethodsMap[method]!!
         }
 
         for (relativesMethod in relativesMethods) {
@@ -186,21 +221,6 @@ class NameObfuscation(
         }
     }
 
-    private fun isEnumMethod(method: MethodStruct): Boolean {
-        if (method.owner.isEnum()) {
-            if (method.isPublic() && method.isStatic()) {
-                val ownerName = method.owner.getClassName()
-                val methodName = method.name()
-                val methodDesc = method.desc()
-
-                return ((methodName == "values" || methodName == "\$values") && methodDesc == "()[L$ownerName;")
-                        || (methodName == "valueOf" && methodDesc == "(Ljava/lang/String;)L$ownerName;")
-            }
-        }
-
-        return false
-    }
-
     private fun remap() {
         logger.info("Remap")
 
@@ -221,8 +241,6 @@ class NameObfuscation(
             if (classStruct.hasMappedName()) {
                 (classStruct.classWrapper.classLoader as TargetJar).updateClassKey(oldName, classStruct.getFinalName())
             }
-
-            Utils.breakpoint()
         }
     }
 

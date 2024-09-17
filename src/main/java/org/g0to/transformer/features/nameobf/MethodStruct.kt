@@ -40,6 +40,17 @@ class MethodStruct(
     fun isProtected() = Modifier.isProtected(node.access)
     fun isPrivate() = Modifier.isPrivate(node.access)
 
+    fun isEnumMethod(): Boolean {
+        if (owner.isEnum() && isPublic() && isStatic()) {
+            val ownerName = owner.getClassName()
+
+            return ((name() == "values" || name() == "\$values") && desc() == "()[L$ownerName;")
+                    || (name() == "valueOf" && desc() == "(Ljava/lang/String;)L$ownerName;")
+        }
+
+        return false
+    }
+
     fun id() = node.name + node.desc
     fun name() = node.name
     fun desc() = node.desc
@@ -58,7 +69,7 @@ class MethodStruct(
     }
 
     fun shouldRename(): Boolean {
-        return !isSpacial() && !isNative() && !isMain()
+        return !isSpacial() && !isNative() && !isMain() && !isEnumMethod()
     }
 
     override fun toString(): String {

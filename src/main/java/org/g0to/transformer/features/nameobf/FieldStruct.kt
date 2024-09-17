@@ -15,6 +15,19 @@ class FieldStruct(
     fun isProtected() = Modifier.isProtected(node.access)
     fun isPrivate() = Modifier.isPrivate(node.access)
 
+    fun isEnumField(): Boolean {
+        if (owner.isEnum() && isStatic() && isFinal()) {
+            if (isPublic()) {
+                return desc().equals('L' + owner.getClassName() + ';')
+            } else if (isPrivate()) {
+                return name().equals("\$VALUES")
+                        && desc().equals("[L" + owner.getClassName() + ';')
+            }
+        }
+
+        return false
+    }
+
     fun id() = node.name + node.desc
     fun name() = node.name
     fun desc() = node.desc
@@ -30,6 +43,10 @@ class FieldStruct(
 
     fun idEqual(fieldStruct: FieldStruct): Boolean {
         return id() == fieldStruct.id()
+    }
+
+    fun shouldRename(): Boolean {
+        return !isEnumField()
     }
 
     override fun toString(): String {
