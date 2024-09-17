@@ -46,7 +46,9 @@ class TargetJar(private val core: Core) : ASMClassLoader {
                 }
             }
             else -> {
-                resources.add(entryName)
+                if (!entryName.endsWith('/')) {
+                    resources.add(entryName)
+                }
             }
         }
     }
