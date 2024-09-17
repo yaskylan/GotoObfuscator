@@ -40,7 +40,7 @@ class TargetJar(private val core: Core) : ASMClassLoader {
         val entryName = entry.name
 
         when {
-            entryName.endsWith(".class") && !core.skipClasses.isExcludedClass(entryName.substring(0, entryName.length - ".class".length)) -> {
+            entryName.endsWith(".class") && isEligibleClass(entryName) -> {
                 jarFile.getInputStream(entry).use { entryInputStream ->
                     addClass(entryName, IOUtils.toByteArray(entryInputStream))
                 }
@@ -51,6 +51,13 @@ class TargetJar(private val core: Core) : ASMClassLoader {
                 }
             }
         }
+    }
+
+    private fun isEligibleClass(resName: String): Boolean {
+        val classFullName = resName.substring(0, resName.length - ".class".length)
+
+        return !core.skipClasses.isExcludedClass(classFullName)
+                && !classFullName.endsWith("module-info")
     }
 
     private fun addClass(entryName: String, classBuffer: ByteArray) {
