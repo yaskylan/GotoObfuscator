@@ -116,6 +116,7 @@ class ClassStruct(
     fun getMethods() = methods.values
 
     fun isExternal() = classWrapper.isExternal()
+    fun isModule() = classWrapper.isModule()
 
     override fun toString(): String {
         return "ClassStruct(classWrapper=$classWrapper, mappedName=$mappedName)"

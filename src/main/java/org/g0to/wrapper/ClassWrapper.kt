@@ -5,6 +5,7 @@ import org.g0to.classloaders.ASMClassLoader
 import org.g0to.classloaders.ExtLoader
 import org.g0to.core.Core
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
@@ -45,6 +46,10 @@ class ClassWrapper(
 
     fun isExternal(): Boolean {
         return classLoader is ExtLoader
+    }
+
+    fun isModule(): Boolean {
+        return (classNode.access and Opcodes.ACC_MODULE) != 0
     }
 
     override fun toString(): String {

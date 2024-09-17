@@ -65,7 +65,8 @@ class NameObfuscation(
             val executor = Executors.newFixedThreadPool(setting.threadPoolSize) as ThreadPoolExecutor
 
             for (classStruct in classTree.classes.values) {
-                if (classStruct.isExternal()) {
+                if (classStruct.isExternal()
+                    || classStruct.isModule()) {
                     continue
                 }
 
@@ -97,7 +98,8 @@ class NameObfuscation(
         }
 
         for (classStruct in classTree.classes.values) {
-            if (classStruct.isExternal()) {
+            if (classStruct.isExternal()
+                || classStruct.isModule()) {
                 continue
             }
 
