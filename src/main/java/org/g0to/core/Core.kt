@@ -8,7 +8,7 @@ import org.g0to.classloaders.GlobalClassManager
 import org.g0to.classloaders.TargetJar
 import org.g0to.conf.Configuration
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
-import org.g0to.exclude.ExclusionManager
+import org.g0to.exclusion.ExclusionManager
 import org.g0to.transformer.Transformer
 import org.g0to.transformer.TransformerRegistry
 import org.g0to.utils.AnalyzerExceptionDumper

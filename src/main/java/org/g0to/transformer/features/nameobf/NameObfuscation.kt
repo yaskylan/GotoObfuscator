@@ -6,7 +6,7 @@ import org.g0to.classloaders.TargetJar
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
 import org.g0to.core.Core
 import org.g0to.dictionary.Dictionary
-import org.g0to.exclude.ExclusionManager
+import org.g0to.exclusion.ExclusionManager
 import org.g0to.transformer.Transformer
 import org.g0to.utils.TextWriter
 import org.g0to.utils.Utils

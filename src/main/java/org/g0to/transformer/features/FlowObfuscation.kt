@@ -11,9 +11,9 @@ import org.objectweb.asm.tree.LabelNode
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.asKotlinRandom
 
-class FlowObfuscate(
+class FlowObfuscation(
     setting: TransformerBaseSetting
-) : Transformer<FlowObfuscate.Setting>("FlowObfuscate", setting as Setting) {
+) : Transformer<FlowObfuscation.Setting>("FlowObfuscate", setting as Setting) {
     class Setting : TransformerBaseSetting()
 
     override fun run(core: Core) {

@@ -14,9 +14,9 @@ import org.objectweb.asm.tree.IntInsnNode
 import org.objectweb.asm.tree.LdcInsnNode
 import java.util.concurrent.ThreadLocalRandom
 
-class NumberEncrypt(
+class NumberEncryption(
     setting: TransformerBaseSetting
-) : Transformer<NumberEncrypt.Setting>("NumberEncrypt", setting as Setting) {
+) : Transformer<NumberEncryption.Setting>("NumberEncrypt", setting as Setting) {
     class Setting(
         @SerializedName("doInt")
         val doInt: Boolean = true,

@@ -9,17 +9,17 @@ public class Transformers {
     public NameObfuscation.Setting nameObfuscation;
 
     @SerializedName("StringEncrypt")
-    public StringEncrypt.Setting stringEncrypt;
+    public StringEncryption.Setting stringEncrypt;
 
     @SerializedName("InvokeProxy")
     public InvokeProxy.Setting invokeProxy;
 
     @SerializedName("FlowObfuscate")
-    public FlowObfuscate.Setting flowObfuscate;
+    public FlowObfuscation.Setting flowObfuscate;
 
     @SerializedName("GotoReplacer")
     public GotoReplacer.Setting gotoReplacer;
 
     @SerializedName("NumberEncrypt")
-    public NumberEncrypt.Setting numberEncrypt;
+    public NumberEncryption.Setting numberEncrypt;
 }

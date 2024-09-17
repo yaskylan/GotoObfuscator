@@ -1,4 +1,4 @@
-package org.g0to.exclude
+package org.g0to.exclusion
 
 import com.google.gson.annotations.SerializedName
 import org.apache.logging.log4j.LogManager

@@ -8,10 +8,10 @@ object TransformerRegistry {
     private val registry = HashMap<String, Class<out Transformer<*>>>()
 
     init {
+        registry["StringEncryption"] = StringEncryption::class.java
+        registry["NumberEncryption"] = NumberEncryption::class.java
         registry["NameObfuscation"] = NameObfuscation::class.java
-        registry["StringEncrypt"] = StringEncrypt::class.java
-        registry["FlowObfuscate"] = FlowObfuscate::class.java
-        registry["NumberEncrypt"] = NumberEncrypt::class.java
+        registry["FlowObfuscation"] = FlowObfuscation::class.java
         registry["GotoReplacer"] = GotoReplacer::class.java
         registry["InvokeProxy"] = InvokeProxy::class.java
     }

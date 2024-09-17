@@ -17,9 +17,9 @@ import org.objectweb.asm.tree.MethodNode
 import java.lang.reflect.Modifier
 import java.util.concurrent.ThreadLocalRandom
 
-class StringEncrypt(
+class StringEncryption(
     setting: TransformerBaseSetting
-) : Transformer<StringEncrypt.Setting>("StringEncrypt", setting as Setting) {
+) : Transformer<StringEncryption.Setting>("StringEncrypt", setting as Setting) {
     class Setting : TransformerBaseSetting()
 
     override fun run(core: Core) {
