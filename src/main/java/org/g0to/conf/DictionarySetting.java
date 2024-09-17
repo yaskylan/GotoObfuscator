@@ -8,10 +8,8 @@ import org.g0to.dictionary.Dictionary;
 import org.g0to.wrapper.ClassWrapper;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Function;
 
 public class DictionarySetting {
     @SerializedName("valueType")
@@ -21,7 +19,7 @@ public class DictionarySetting {
     private JsonElement value;
 
     @SerializedName("baseLength")
-    public Integer baseLength = 5;
+    public Integer baseLength = 1;
 
     @SerializedName("blacklist")
     public List<String> blacklist;

@@ -1,4 +1,4 @@
-package org.g0to.transformer.features.classrename
+package org.g0to.transformer.features.nameobf
 
 import org.objectweb.asm.tree.MethodNode
 import java.lang.reflect.Modifier
@@ -32,9 +32,13 @@ class MethodStruct(
     }
 
     fun isMain() = node.name == "main" && node.desc == "([Ljava/lang/String;)V"
+    fun isSpacial() = node.name[0] == '<'
     fun isAbstract() = Modifier.isAbstract(node.access)
     fun isNative() = Modifier.isNative(node.access)
     fun isStatic() = Modifier.isStatic(node.access)
+    fun isPublic() = Modifier.isPublic(node.access)
+    fun isProtected() = Modifier.isProtected(node.access)
+    fun isPrivate() = Modifier.isPrivate(node.access)
 
     fun id() = node.name + node.desc
     fun name() = node.name
@@ -51,6 +55,10 @@ class MethodStruct(
 
     fun idEqual(methodStruct: MethodStruct): Boolean {
         return id() == methodStruct.id()
+    }
+
+    fun shouldRename(): Boolean {
+        return !isSpacial() && !isNative() && !isMain()
     }
 
     override fun toString(): String {

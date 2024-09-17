@@ -1,4 +1,4 @@
-package org.g0to.transformer.features.classrename
+package org.g0to.transformer.features.nameobf
 
 import org.objectweb.asm.Type
 import org.objectweb.asm.commons.Remapper
@@ -36,8 +36,7 @@ class TreeRemapper(
             return name
         }
 
-        val mappedName = classStruct.searchMethod(name, descriptor)?.mappedName ?: return name
-        return mappedName
+        return classStruct.searchMethod(name, descriptor)?.mappedName ?: name
     }
 
     override fun mapAnnotationAttributeName(descriptor: String, name: String): String {
@@ -54,16 +53,24 @@ class TreeRemapper(
             return name
         }
 
-        for (method in classStruct.methods.values) {
-            if (method.isAbstract() && method.name() == name) {
-                return if (method.hasMappedName()) {
-                    method.mappedName!!
-                } else {
-                    name
-                }
+        return searchAbstractMethod(classStruct, name)?.mappedName ?: name
+    }
+
+    private fun searchAbstractMethod(classStruct: ClassStruct, name: String): MethodStruct? {
+        for (method in classStruct.getMethods()) {
+            if (method.name() == name && method.isAbstract()) {
+                return method
             }
         }
 
-        return name
+        for (parent in classStruct.parents) {
+            val method = searchAbstractMethod(parent, name)
+
+            if (method != null) {
+                return method
+            }
+        }
+
+        return null
     }
 }

@@ -3,7 +3,7 @@ package org.g0to.exclude
 import com.google.gson.annotations.SerializedName
 import org.apache.logging.log4j.LogManager
 
-class ExcludeManager(excludeSetting: ExcludeSetting?) {
+class ExclusionManager(excludeSetting: ExcludeSetting?) {
     class ExcludeSetting(
         @SerializedName("classes")
         val classes: Array<String>?,

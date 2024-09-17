@@ -2,11 +2,11 @@ package org.g0to.conf.transformer.settings;
 
 import com.google.gson.annotations.SerializedName;
 import org.g0to.transformer.features.*;
-import org.g0to.transformer.features.classrename.ClassRename;
+import org.g0to.transformer.features.nameobf.NameObfuscation;
 
 public class Transformers {
-    @SerializedName("ClassRename")
-    public ClassRename.Setting classRename;
+    @SerializedName("NameObfuscation")
+    public NameObfuscation.Setting nameObfuscation;
 
     @SerializedName("StringEncrypt")
     public StringEncrypt.Setting stringEncrypt;

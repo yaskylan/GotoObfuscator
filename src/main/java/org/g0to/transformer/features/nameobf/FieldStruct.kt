@@ -1,4 +1,4 @@
-package org.g0to.transformer.features.classrename
+package org.g0to.transformer.features.nameobf
 
 import org.objectweb.asm.tree.FieldNode
 import java.lang.reflect.Modifier

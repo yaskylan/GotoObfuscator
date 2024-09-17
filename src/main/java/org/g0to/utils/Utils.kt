@@ -1,13 +1,12 @@
 package org.g0to.utils
 
-import java.util.Objects
-import java.util.Random
+import java.util.*
 
 object Utils {
     fun breakpoint() {
     }
 
-    fun <T> isOneOfThese(target: T, vararg toCompareObjects: T): Boolean {
+    fun <T> isOneOf(target: T, vararg toCompareObjects: T): Boolean {
         for (toCompareObject in toCompareObjects) {
             if (Objects.equals(target, toCompareObject)) {
                 return true

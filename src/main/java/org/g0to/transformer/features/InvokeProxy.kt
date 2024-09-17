@@ -51,7 +51,7 @@ class InvokeProxy(
                                 continue
                             }
 
-                            if (Utils.isOneOfThese(
+                            if (Utils.isOneOf(
                                 instruction.opcode,
                                 Opcodes.INVOKESTATIC,
                                 Opcodes.INVOKEVIRTUAL,
@@ -97,10 +97,10 @@ class InvokeProxy(
                                 continue
                             }
 
-                            val isGet = Utils.isOneOfThese(instruction.opcode, Opcodes.GETSTATIC, Opcodes.GETFIELD)
-                            val isStatic = Utils.isOneOfThese(instruction.opcode, Opcodes.GETSTATIC, Opcodes.PUTSTATIC)
+                            val isGet = Utils.isOneOf(instruction.opcode, Opcodes.GETSTATIC, Opcodes.GETFIELD)
+                            val isStatic = Utils.isOneOf(instruction.opcode, Opcodes.GETSTATIC, Opcodes.PUTSTATIC)
 
-                            if (!isGet && Utils.isOneOfThese(method.name, "<init>", "<clinit>")) {
+                            if (!isGet && Utils.isOneOf(method.name, "<init>", "<clinit>")) {
                                 continue
                             }
 

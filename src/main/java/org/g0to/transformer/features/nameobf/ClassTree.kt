@@ -1,4 +1,4 @@
-package org.g0to.transformer.features.classrename
+package org.g0to.transformer.features.nameobf
 
 import org.g0to.core.Core
 import org.g0to.wrapper.ClassWrapper

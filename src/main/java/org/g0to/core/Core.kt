@@ -3,17 +3,16 @@ package org.g0to.core
 import com.google.gson.annotations.SerializedName
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.BiConsumer
-import org.g0to.classloaders.GlobalClassManager
 import org.g0to.classloaders.ExtLoader
+import org.g0to.classloaders.GlobalClassManager
 import org.g0to.classloaders.TargetJar
 import org.g0to.conf.Configuration
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
-import org.g0to.exclude.ExcludeManager
+import org.g0to.exclude.ExclusionManager
 import org.g0to.transformer.Transformer
 import org.g0to.transformer.TransformerRegistry
 import org.g0to.utils.AnalyzerExceptionDumper
 import org.g0to.wrapper.ClassWrapper
-import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.analysis.Analyzer
 import org.objectweb.asm.tree.analysis.AnalyzerException
@@ -33,8 +32,8 @@ class Core(
     }
 
     val transformers = ArrayList<Transformer<*>>()
-    val skipClasses = ExcludeManager(ExcludeManager.ExcludeSetting(conf.skipClasses, null, null))
-    val libraryClasses = ExcludeManager(ExcludeManager.ExcludeSetting(conf.libraryClasses, null, null))
+    val skipClasses = ExclusionManager(ExclusionManager.ExcludeSetting(conf.skipClasses, null, null))
+    val libraryClasses = ExclusionManager(ExclusionManager.ExcludeSetting(conf.libraryClasses, null, null))
     val targetJar = TargetJar(this)
     val extLoader = ExtLoader(this)
     val globalClassManager = GlobalClassManager(this)

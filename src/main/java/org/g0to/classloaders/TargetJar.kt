@@ -3,12 +3,12 @@ package org.g0to.classloaders
 import org.apache.commons.io.IOUtils
 import org.apache.logging.log4j.LogManager
 import org.g0to.core.Core
-import org.g0to.wrapper.ClassWrapper
 import org.g0to.utils.ValueProcessor
+import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import java.io.OutputStream
-import java.util.EnumMap
+import java.util.*
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream

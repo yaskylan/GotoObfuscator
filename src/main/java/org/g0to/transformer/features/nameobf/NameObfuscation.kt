@@ -1,4 +1,4 @@
-package org.g0to.transformer.features.classrename
+package org.g0to.transformer.features.nameobf
 
 import com.google.gson.annotations.SerializedName
 import org.apache.commons.lang3.StringUtils
@@ -6,7 +6,7 @@ import org.g0to.classloaders.TargetJar
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
 import org.g0to.core.Core
 import org.g0to.dictionary.Dictionary
-import org.g0to.exclude.ExcludeManager
+import org.g0to.exclude.ExclusionManager
 import org.g0to.transformer.Transformer
 import org.g0to.utils.TextWriter
 import org.g0to.utils.Utils
@@ -14,12 +14,12 @@ import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.tree.ClassNode
 import java.io.IOException
 
-class ClassRename(
+class NameObfuscation(
     setting: TransformerBaseSetting
-) : Transformer<ClassRename.Setting>("ClassRename", setting as Setting) {
+) : Transformer<NameObfuscation.Setting>("NameObfuscation", setting as Setting) {
     class Setting(
         @SerializedName("exclude")
-        val exclude: ExcludeManager.ExcludeSetting? = null,
+        val exclude: ExclusionManager.ExcludeSetting? = null,
         @SerializedName("mappingPath")
         val mappingPath: String = "mapping.txt",
         @SerializedName("renameClass")
@@ -32,37 +32,50 @@ class ClassRename(
         val renameMain: Boolean = false,
     ) : TransformerBaseSetting()
 
-    private val excludeManager = ExcludeManager((setting as Setting).exclude)
+    private val exclusionManager = ExclusionManager((setting as Setting).exclude)
     private val classTree = ClassTree()
 
     override fun run(core: Core) {
-        logger.info("Breakpoint start")
+        logger.info("Initializing class tree")
         classTree.init(core)
+
         rename(core)
-        remap()
         writeMapping()
-        logger.info("Breakpoint end")
+        remap()
     }
 
     private fun rename(core: Core) {
+        logger.info("Picking name")
+
         val classDictionary = core.conf.dictionary.newDictionary()
         val fieldDictionary = core.conf.dictionary.newDictionary()
+        val methodDictionary = core.conf.dictionary.newDictionary()
 
         for (classStruct in classTree.classes.values) {
             if (classStruct.isExternal()) {
                 continue
             }
 
-            renameClass(classStruct, classDictionary)
+            if (setting.renameClass) {
+                renameClass(classStruct, classDictionary)
+            }
 
-            for (field in classStruct.fields.values) {
-                renameField(field, fieldDictionary)
+            if (setting.renameField) {
+                for (field in classStruct.fields.values) {
+                    renameField(field, fieldDictionary)
+                }
+            }
+
+            if (setting.renameMethod) {
+                for (method in classStruct.methods.values) {
+                    renameMethod(method, methodDictionary)
+                }
             }
         }
     }
 
     private fun renameClass(classStruct: ClassStruct, dictionary: Dictionary) {
-        if (!classStruct.shouldRename(setting) || classStruct.hasMappedName() || excludeManager.isExcludedClass(classStruct.getClassName())) {
+        if (!classStruct.shouldRename(setting) || classStruct.hasMappedName() || exclusionManager.isExcludedClass(classStruct.getClassName())) {
             return
         }
 
@@ -86,7 +99,7 @@ class ClassRename(
     }
 
     private fun renameField(field: FieldStruct, dictionary: Dictionary) {
-        if (isEnumField(field) || excludeManager.isExcludedField(field.owner.getClassName(), field.name(), field.desc())) {
+        if (isEnumField(field) || exclusionManager.isExcludedField(field.owner.getClassName(), field.name(), field.desc())) {
             return
         }
 
@@ -106,11 +119,91 @@ class ClassRename(
         return false
     }
 
-    private fun renameMethod() {
-        // TODO
+    private fun renameMethod(method: MethodStruct, dictionary: Dictionary) {
+        if (method.hasMappedName()
+            || !method.shouldRename()
+            || isEnumMethod(method)
+            || exclusionManager.isExcludedMethod(method.owner.getClassName(), method.name(), method.desc())) {
+            return
+        }
+
+        if (method.isStatic()) {
+            method.mappedName = dictionary.randString()
+            return
+        }
+
+        val relativesMethods = HashSet<MethodStruct>().apply {
+            searchRelativesMethods(
+                method.owner,
+                method.name(),
+                method.desc(),
+                this,
+                HashSet()
+            )
+        }
+
+        for (relativesMethod in relativesMethods) {
+            if (relativesMethod.owner.isExternal()
+                || relativesMethod.isNative()
+                || exclusionManager.isExcludedMethod(relativesMethod.owner.getClassName(), relativesMethod.name(), relativesMethod.desc())) {
+                return
+            }
+        }
+
+        val mappedName = dictionary.randString()
+
+        for (relativesMethod in relativesMethods) {
+            relativesMethod.mappedName = mappedName
+        }
+    }
+
+    private fun searchRelativesMethods(classStruct: ClassStruct,
+                                       name: String,
+                                       desc: String,
+                                       targetSet: HashSet<MethodStruct>,
+                                       visitedSet: HashSet<ClassStruct>) {
+        if (visitedSet.contains(classStruct)) {
+            return
+        }
+        visitedSet.add(classStruct)
+
+        classStruct.getMethod(name, desc).also {
+            if (it != null) {
+                targetSet.add(it)
+            }
+        }
+
+        if (classStruct.superClass != null) {
+            searchRelativesMethods(classStruct.superClass, name, desc, targetSet, visitedSet)
+        }
+
+        for (iface in classStruct.interfaces) {
+            searchRelativesMethods(iface, name, desc, targetSet, visitedSet)
+        }
+
+        for (subClass in classStruct.subClasses) {
+            searchRelativesMethods(subClass, name, desc, targetSet, visitedSet)
+        }
+    }
+
+    private fun isEnumMethod(method: MethodStruct): Boolean {
+        if (method.owner.isEnum()) {
+            if (method.isPublic() && method.isStatic()) {
+                val ownerName = method.owner.getClassName()
+                val methodName = method.name()
+                val methodDesc = method.desc()
+
+                return ((methodName == "values" || methodName == "\$values") && methodDesc == "()[L$ownerName;")
+                        || (methodName == "valueOf" && methodDesc == "(Ljava/lang/String;)L$ownerName;")
+            }
+        }
+
+        return false
     }
 
     private fun remap() {
+        logger.info("Remap")
+
         val treeRemapper = TreeRemapper(classTree)
 
         for (classStruct in classTree.classes.values) {
@@ -134,6 +227,8 @@ class ClassRename(
     }
 
     private fun writeMapping() {
+        logger.info("Writing mapping")
+
         val remapper = TreeRemapper(classTree)
 
         try {

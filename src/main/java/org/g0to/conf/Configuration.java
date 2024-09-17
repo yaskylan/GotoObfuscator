@@ -2,7 +2,6 @@ package org.g0to.conf;
 
 import com.google.gson.annotations.SerializedName;
 import org.g0to.conf.transformer.settings.Transformers;
-import org.g0to.exclude.ExcludeManager;
 
 import java.util.Collections;
 import java.util.List;

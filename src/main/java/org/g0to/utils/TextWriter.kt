@@ -1,6 +1,8 @@
 package org.g0to.utils
 
-import java.io.*
+import java.io.Closeable
+import java.io.FileOutputStream
+import java.io.Flushable
 import java.nio.charset.StandardCharsets
 
 class TextWriter(filename: String) : Flushable, Closeable {

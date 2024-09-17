@@ -1,4 +1,4 @@
-package org.g0to.transformer.features.classrename
+package org.g0to.transformer.features.nameobf
 
 import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.Opcodes
@@ -53,7 +53,7 @@ class ClassStruct(
         }
     }
 
-    fun shouldRename(setting: ClassRename.Setting): Boolean {
+    fun shouldRename(setting: NameObfuscation.Setting): Boolean {
         return methods.values.none { it.isNative() || (!setting.renameMain && it.isMain()) }
     }
 
