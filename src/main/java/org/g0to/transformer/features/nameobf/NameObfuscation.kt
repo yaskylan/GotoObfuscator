@@ -57,10 +57,11 @@ class NameObfuscation(
         val classDictionary = core.conf.dictionary.newDictionary()
         val fieldDictionary = core.conf.dictionary.newDictionary()
         val methodDictionary = core.conf.dictionary.newDictionary()
-        val relativesMethodsMap = ConcurrentHashMap<MethodStruct, HashSet<MethodStruct>>()
+        val relativeMethodsMap = ConcurrentHashMap<MethodStruct, HashSet<MethodStruct>>()
 
         if (setting.renameMethod && setting.multithreading) {
             logger.info("Using multithreading, thread pool size is ${setting.threadPoolSize}")
+            logger.info("Building relative methods")
 
             val executor = Executors.newFixedThreadPool(setting.threadPoolSize) as ThreadPoolExecutor
 
@@ -77,8 +78,10 @@ class NameObfuscation(
                     }
 
                     executor.execute {
-                        relativesMethodsMap[method] = HashSet<MethodStruct>().apply {
-                            searchRelativesMethods(
+                        logger.trace("[Multithreading] Build relative methods map for {}", method.owner.getClassName() + "." + method.name() + method.desc())
+
+                        relativeMethodsMap[method] = HashSet<MethodStruct>().apply {
+                            searchRelativeMethods(
                                 method.owner,
                                 method.name(),
                                 method.desc(),
@@ -115,7 +118,7 @@ class NameObfuscation(
 
             if (setting.renameMethod) {
                 for (method in classStruct.getMethods()) {
-                    renameMethod(method, methodDictionary, relativesMethodsMap)
+                    renameMethod(method, methodDictionary, relativeMethodsMap)
                 }
             }
         }
@@ -165,9 +168,11 @@ class NameObfuscation(
             return
         }
 
-        val relativesMethods = if (relativesMethodsMap.isEmpty()) {
+        val relativeMethods = if (relativesMethodsMap.isEmpty()) {
+            logger.trace("Build relative methods map for {}", method.owner.getClassName() + "." + method.name() + method.desc())
+
             HashSet<MethodStruct>().apply {
-                searchRelativesMethods(
+                searchRelativeMethods(
                     method.owner,
                     method.name(),
                     method.desc(),
@@ -179,7 +184,7 @@ class NameObfuscation(
             relativesMethodsMap[method]!!
         }
 
-        for (relativesMethod in relativesMethods) {
+        for (relativesMethod in relativeMethods) {
             if (relativesMethod.owner.isExternal()
                 || relativesMethod.isNative()
                 || exclusionManager.isExcludedMethod(relativesMethod.owner.getClassName(), relativesMethod.name(), relativesMethod.desc())) {
@@ -189,16 +194,16 @@ class NameObfuscation(
 
         val mappedName = dictionary.randString()
 
-        for (relativesMethod in relativesMethods) {
-            relativesMethod.mappedName = mappedName
+        for (relativeMethod in relativeMethods) {
+            relativeMethod.mappedName = mappedName
         }
     }
 
-    private fun searchRelativesMethods(classStruct: ClassStruct,
-                                       name: String,
-                                       desc: String,
-                                       targetSet: HashSet<MethodStruct>,
-                                       visitedSet: HashSet<ClassStruct>) {
+    private fun searchRelativeMethods(classStruct: ClassStruct,
+                                      name: String,
+                                      desc: String,
+                                      targetSet: HashSet<MethodStruct>,
+                                      visitedSet: HashSet<ClassStruct>) {
         if (visitedSet.contains(classStruct)) {
             return
         }
@@ -211,15 +216,15 @@ class NameObfuscation(
         }
 
         if (classStruct.superClass != null) {
-            searchRelativesMethods(classStruct.superClass, name, desc, targetSet, visitedSet)
+            searchRelativeMethods(classStruct.superClass, name, desc, targetSet, visitedSet)
         }
 
         for (iface in classStruct.interfaces) {
-            searchRelativesMethods(iface, name, desc, targetSet, visitedSet)
+            searchRelativeMethods(iface, name, desc, targetSet, visitedSet)
         }
 
         for (subClass in classStruct.subClasses) {
-            searchRelativesMethods(subClass, name, desc, targetSet, visitedSet)
+            searchRelativeMethods(subClass, name, desc, targetSet, visitedSet)
         }
     }
 
