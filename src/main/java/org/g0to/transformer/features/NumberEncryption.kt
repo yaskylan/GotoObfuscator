@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 class NumberEncryption(
     setting: TransformerBaseSetting
-) : Transformer<NumberEncryption.Setting>("NumberEncrypt", setting as Setting) {
+) : Transformer<NumberEncryption.Setting>("StringEncryption", setting as Setting) {
     class Setting(
         @SerializedName("doInt")
         val doInt: Boolean = true,

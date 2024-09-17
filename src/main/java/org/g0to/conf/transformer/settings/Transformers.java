@@ -8,18 +8,18 @@ public class Transformers {
     @SerializedName("NameObfuscation")
     public NameObfuscation.Setting nameObfuscation;
 
-    @SerializedName("StringEncrypt")
-    public StringEncryption.Setting stringEncrypt;
+    @SerializedName("StringEncryption")
+    public StringEncryption.Setting stringEncryption;
 
     @SerializedName("InvokeProxy")
     public InvokeProxy.Setting invokeProxy;
 
-    @SerializedName("FlowObfuscate")
-    public FlowObfuscation.Setting flowObfuscate;
+    @SerializedName("FlowObfuscation")
+    public FlowObfuscation.Setting flowObfuscation;
 
     @SerializedName("GotoReplacer")
     public GotoReplacer.Setting gotoReplacer;
 
-    @SerializedName("NumberEncrypt")
-    public NumberEncryption.Setting numberEncrypt;
+    @SerializedName("NumberEncryption")
+    public NumberEncryption.Setting numberEncryption;
 }

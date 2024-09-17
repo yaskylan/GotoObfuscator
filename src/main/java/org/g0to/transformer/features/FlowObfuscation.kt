@@ -13,7 +13,7 @@ import kotlin.random.asKotlinRandom
 
 class FlowObfuscation(
     setting: TransformerBaseSetting
-) : Transformer<FlowObfuscation.Setting>("FlowObfuscate", setting as Setting) {
+) : Transformer<FlowObfuscation.Setting>("FlowObfuscation", setting as Setting) {
     class Setting : TransformerBaseSetting()
 
     override fun run(core: Core) {

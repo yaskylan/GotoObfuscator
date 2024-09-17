@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 class StringEncryption(
     setting: TransformerBaseSetting
-) : Transformer<StringEncryption.Setting>("StringEncrypt", setting as Setting) {
+) : Transformer<StringEncryption.Setting>("StringEncryption", setting as Setting) {
     class Setting : TransformerBaseSetting()
 
     override fun run(core: Core) {
