@@ -1,0 +1,68 @@
+{
+  "logLevel": "info",
+  "inputPath": "input.jar",
+  "outputPath": "output.jar",
+  "jdkPath": "C:\\Program Files\\Java\\jdk-21",
+  "javaVersion": 21,
+  "libraries": [
+    "libs\\",
+    "lib.jar",
+    "C:\\Workspace\\SecretProject\\libs\\"
+  ],
+  "skipClasses": [
+    "exclude/*",
+    "exclude/all/**",
+    "org/g0to/Main"
+  ],
+  "dictionary": {
+    "valueType": "range",
+    "value": [
+      "a--z",
+      "A--Z",
+      "0--9"
+    ],
+    "baseLength": 1,
+    "blacklist": [
+      "Main",
+      "main"
+    ]
+  },
+  "transformers": {
+    "StringEncrypt": {
+    },
+    "NumberEncrypt": {
+      "doDouble": false,
+      "doLong": false
+    },
+    "FlowObfuscate": {
+      "disable": false
+    },
+    "GotoReplacer": {
+      "disable": true
+    },
+    "InvokeProxy": {
+      "disable": true
+    },
+    "NameObfuscation": {
+      "exclude": {
+        "classes": [
+          "exclude/thispackage/*",
+          "exclude/all/**",
+          "exclude/thisclass/Main"
+        ],
+        "fields": [
+          "org/g0to/Main field1 I",
+          "org/g0to/Main * I",
+          "org/g0to/Main * *"
+        ],
+        "methods": [
+          "org/g0to/Main singleMethod (Ljava/lang/String;)V",
+          "org/g0to/Main multiMethod *",
+          "org/g0to/Main * (I)V",
+          "org/g0to/ExcludeAllMethodForClass * *",
+          "org/g0to/** * *"
+        ]
+      }
+    }
+  }
+}
