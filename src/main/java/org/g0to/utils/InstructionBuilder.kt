@@ -5,6 +5,13 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.*
 
 class InstructionBuilder {
+    companion object {
+        @JvmStatic
+        fun buildInsnList(builder: InstructionBuilder.() -> Unit): InsnList {
+            return InstructionBuilder().apply(builder).build()
+        }
+    }
+
     private val list = InsnList()
 
     fun build(): InsnList {

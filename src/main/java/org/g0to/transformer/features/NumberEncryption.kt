@@ -123,30 +123,30 @@ class NumberEncryption(
     }
 
     private fun encrypt32(buffer: InstructionBuffer, instruction: AbstractInsnNode, value: Int, isFloat: Boolean) {
-        val key = ThreadLocalRandom.current().nextInt()
-        val builder = InstructionBuilder()
-            .number(value xor key)
-            .number(key)
-            .ixor()
+        buffer.replace(instruction, InstructionBuilder.buildInsnList {
+            val key = ThreadLocalRandom.current().nextInt()
 
-        if (isFloat) {
-            builder.invokeStatic("java/lang/Float", "intBitsToFloat", "(I)F")
-        }
+            number(value xor key)
+            number(key)
+            ixor()
 
-        buffer.replace(instruction, builder.build())
+            if (isFloat) {
+                invokeStatic("java/lang/Float", "intBitsToFloat", "(I)F")
+            }
+        })
     }
 
     private fun encrypt64(buffer: InstructionBuffer, instruction: AbstractInsnNode, value: Long, isFloat: Boolean) {
-        val key = ThreadLocalRandom.current().nextLong()
-        val builder = InstructionBuilder()
-            .number(value xor key)
-            .number(key)
-            .lxor()
+        buffer.replace(instruction, InstructionBuilder.buildInsnList {
+            val key = ThreadLocalRandom.current().nextLong()
 
-        if (isFloat) {
-            builder.invokeStatic("java/lang/Double", "longBitsToDouble", "(J)D")
-        }
+            number(value xor key)
+            number(key)
+            lxor()
 
-        buffer.replace(instruction, builder.build())
+            if (isFloat) {
+                invokeStatic("java/lang/Double", "longBitsToDouble", "(J)D")
+            }
+        })
     }
 }
