@@ -160,7 +160,7 @@ class StringEncryption(
             .invokeVirtual("java/lang/String", "length", "()I")
             .if_icmpge(l5)
 
-        // int xorKey = keyMap[(i ^ varIndex ^ keyOfClass) 0xFFFFFF]; but implemented by using switch
+        // int xorKey = keyMap[(i ^ varIndex ^ keyOfClass) & 0xFF]; but implemented by using switch
         insnBuilder.iload(varForI)
             .iload(varIndex)
             .ixor()
