@@ -204,6 +204,7 @@ class StringEncryption(
             .dup()
             .aload(varBuffer)
             .invokeSpecial("java/lang/String", "<init>", "([C)V")
+            .invokeVirtual("java/lang/String", "intern", "()Ljava/lang/String;")
             .aastore()
         // Set mark to a non-zero value
         insnBuilder.getStatic(className, markField.name, markField.desc)
