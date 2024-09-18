@@ -18,41 +18,30 @@ class InstructionBuilder {
         return list
     }
 
-    fun <T : Any> array(type: String, list: List<T>): InstructionBuilder {
-        number(list.size)
-            .anewArray(type)
-            .dup()
-
-        for (i in list.indices) {
-            number(i).ldc(list[i]).aastore()
-
-            if (i != list.size - 1) {
-                dup()
-            }
-        }
-
-        return this
+    fun block(build: InstructionBuilder.() -> Unit) {
+        build(this)
     }
 
-    fun <T : Any> array(type: String, array: Array<T>): InstructionBuilder {
+    fun <T : Any> array(newArray: () -> Unit,
+                        store: T.() -> Unit,
+                        array: Array<T>) {
         val len = array.size
 
         number(len)
-            .anewArray(type)
-            .dup()
+        newArray()
+        dup()
 
         for (i in 0 until len) {
-            number(i).ldc(array[i]).aastore()
+            number(i)
+            store(array[i])
 
             if (i != len - 1) {
                 dup()
             }
         }
-
-        return this
     }
 
-    fun number(v: Int): InstructionBuilder {
+    fun number(v: Int) {
         if (v in -1..5) {
             return insn(Opcodes.ICONST_0 + v)
         }
@@ -68,7 +57,7 @@ class InstructionBuilder {
         return ldc(v)
     }
 
-    fun number(v: Long): InstructionBuilder {
+    fun number(v: Long) {
         if (v == 0L) {
             return insn(Opcodes.LCONST_0)
         }
@@ -80,7 +69,7 @@ class InstructionBuilder {
         return ldc(v)
     }
 
-    fun number(v: Float): InstructionBuilder {
+    fun number(v: Float) {
         if (v == 0.0F) {
             return insn(Opcodes.FCONST_0)
         }
@@ -96,7 +85,7 @@ class InstructionBuilder {
         return ldc(v)
     }
 
-    fun number(v: Double): InstructionBuilder {
+    fun number(v: Double) {
         if (v == 0.0) {
             return insn(Opcodes.DCONST_0)
         }
@@ -108,495 +97,486 @@ class InstructionBuilder {
         return ldc(v)
     }
 
-    fun aconstNull(): InstructionBuilder {
+    fun aconstNull() {
         insn(Opcodes.ACONST_NULL)
 
-        return this
     }
 
-    fun insn(opcode: Int): InstructionBuilder {
+    fun insn(opcode: Int) {
         list.add(InsnNode(opcode))
 
-        return this
     }
 
-    fun nop(): InstructionBuilder {
+    fun nop() {
         return insn(Opcodes.NOP)
     }
 
-    fun iaload(): InstructionBuilder {
+    fun iaload() {
         return insn(Opcodes.IALOAD)
     }
 
-    fun laload(): InstructionBuilder {
+    fun laload() {
         return insn(Opcodes.LALOAD)
     }
 
-    fun faload(): InstructionBuilder {
+    fun faload() {
         return insn(Opcodes.FALOAD)
     }
 
-    fun daload(): InstructionBuilder {
+    fun daload() {
         return insn(Opcodes.DALOAD)
     }
 
-    fun aaload(): InstructionBuilder {
+    fun aaload() {
         return insn(Opcodes.AALOAD)
     }
 
-    fun baload(): InstructionBuilder {
+    fun baload() {
         return insn(Opcodes.BALOAD)
     }
 
-    fun caload(): InstructionBuilder {
+    fun caload() {
         return insn(Opcodes.CALOAD)
     }
 
-    fun saload(): InstructionBuilder {
+    fun saload() {
         return insn(Opcodes.SALOAD)
     }
 
-    fun iastore(): InstructionBuilder {
+    fun iastore() {
         return insn(Opcodes.IASTORE)
     }
 
-    fun lastore(): InstructionBuilder {
+    fun lastore() {
         return insn(Opcodes.LASTORE)
     }
 
-    fun fastore(): InstructionBuilder {
+    fun fastore() {
         return insn(Opcodes.FASTORE)
     }
 
-    fun dastore(): InstructionBuilder {
+    fun dastore() {
         return insn(Opcodes.DASTORE)
     }
 
-    fun aastore(): InstructionBuilder {
+    fun aastore() {
         return insn(Opcodes.AASTORE)
     }
 
-    fun bastore(): InstructionBuilder {
+    fun bastore() {
         return insn(Opcodes.BASTORE)
     }
 
-    fun castore(): InstructionBuilder {
+    fun castore() {
         return insn(Opcodes.CASTORE)
     }
 
-    fun sastore(): InstructionBuilder {
+    fun sastore() {
         return insn(Opcodes.SASTORE)
     }
 
-    fun pop(): InstructionBuilder {
+    fun pop() {
         return insn(Opcodes.POP)
     }
 
-    fun pop2(): InstructionBuilder {
+    fun pop2() {
         return insn(Opcodes.POP2)
     }
 
-    fun dup(): InstructionBuilder {
+    fun dup() {
         return insn(Opcodes.DUP)
     }
 
-    fun dupx1(): InstructionBuilder {
+    fun dupx1() {
         return insn(Opcodes.DUP_X1)
     }
 
-    fun dupx2(): InstructionBuilder {
+    fun dupx2() {
         return insn(Opcodes.DUP_X2)
     }
 
-    fun dup2(): InstructionBuilder {
+    fun dup2() {
         return insn(Opcodes.DUP2)
     }
 
-    fun dup2x1(): InstructionBuilder {
+    fun dup2x1() {
         return insn(Opcodes.DUP2_X1)
     }
 
-    fun dup2x2(): InstructionBuilder {
+    fun dup2x2() {
         return insn(Opcodes.DUP2_X2)
     }
 
-    fun swap(): InstructionBuilder {
+    fun swap() {
         return insn(Opcodes.SWAP)
     }
 
-    fun iadd(): InstructionBuilder {
+    fun iadd() {
         return insn(Opcodes.IADD)
     }
 
-    fun ladd(): InstructionBuilder {
+    fun ladd() {
         return insn(Opcodes.LADD)
     }
 
-    fun fadd(): InstructionBuilder {
+    fun fadd() {
         return insn(Opcodes.FADD)
     }
 
-    fun dadd(): InstructionBuilder {
+    fun dadd() {
         return insn(Opcodes.DADD)
     }
 
-    fun isub(): InstructionBuilder {
+    fun isub() {
         return insn(Opcodes.ISUB)
     }
 
-    fun lsub(): InstructionBuilder {
+    fun lsub() {
         return insn(Opcodes.LSUB)
     }
 
-    fun fsub(): InstructionBuilder {
+    fun fsub() {
         return insn(Opcodes.FSUB)
     }
 
-    fun dsub(): InstructionBuilder {
+    fun dsub() {
         return insn(Opcodes.DSUB)
     }
 
-    fun imul(): InstructionBuilder {
+    fun imul() {
         return insn(Opcodes.IMUL)
     }
 
-    fun lmul(): InstructionBuilder {
+    fun lmul() {
         return insn(Opcodes.LMUL)
     }
 
-    fun fmul(): InstructionBuilder {
+    fun fmul() {
         return insn(Opcodes.FMUL)
     }
 
-    fun dmul(): InstructionBuilder {
+    fun dmul() {
         return insn(Opcodes.DMUL)
     }
 
-    fun idiv(): InstructionBuilder {
+    fun idiv() {
         return insn(Opcodes.IDIV)
     }
 
-    fun ldiv(): InstructionBuilder {
+    fun ldiv() {
         return insn(Opcodes.LDIV)
     }
 
-    fun fdiv(): InstructionBuilder {
+    fun fdiv() {
         return insn(Opcodes.FDIV)
     }
 
-    fun ddiv(): InstructionBuilder {
+    fun ddiv() {
         return insn(Opcodes.DDIV)
     }
 
-    fun irem(): InstructionBuilder {
+    fun irem() {
         return insn(Opcodes.IREM)
     }
 
-    fun lrem(): InstructionBuilder {
+    fun lrem() {
         return insn(Opcodes.LREM)
     }
 
-    fun frem(): InstructionBuilder {
+    fun frem() {
         return insn(Opcodes.FREM)
     }
 
-    fun drem(): InstructionBuilder {
+    fun drem() {
         return insn(Opcodes.DREM)
     }
 
-    fun ineg(): InstructionBuilder {
+    fun ineg() {
         return insn(Opcodes.INEG)
     }
 
-    fun lneg(): InstructionBuilder {
+    fun lneg() {
         return insn(Opcodes.LNEG)
     }
 
-    fun fneg(): InstructionBuilder {
+    fun fneg() {
         return insn(Opcodes.FNEG)
     }
 
-    fun dneg(): InstructionBuilder {
+    fun dneg() {
         return insn(Opcodes.DNEG)
     }
 
-    fun ishl(): InstructionBuilder {
+    fun ishl() {
         return insn(Opcodes.ISHL)
     }
 
-    fun lshl(): InstructionBuilder {
+    fun lshl() {
         return insn(Opcodes.LSHL)
     }
 
-    fun ishr(): InstructionBuilder {
+    fun ishr() {
         return insn(Opcodes.ISHR)
     }
 
-    fun lshr(): InstructionBuilder {
+    fun lshr() {
         return insn(Opcodes.LSHR)
     }
 
-    fun iushr(): InstructionBuilder {
+    fun iushr() {
         return insn(Opcodes.IUSHR)
     }
 
-    fun lushr(): InstructionBuilder {
+    fun lushr() {
         return insn(Opcodes.LUSHR)
     }
 
-    fun iand(): InstructionBuilder {
+    fun iand() {
         return insn(Opcodes.IAND)
     }
 
-    fun land(): InstructionBuilder {
+    fun land() {
         return insn(Opcodes.LAND)
     }
 
-    fun ior(): InstructionBuilder {
+    fun ior() {
         return insn(Opcodes.IOR)
     }
 
-    fun lor(): InstructionBuilder {
+    fun lor() {
         return insn(Opcodes.LOR)
     }
 
-    fun ixor(): InstructionBuilder {
+    fun ixor() {
         return insn(Opcodes.IXOR)
     }
 
-    fun lxor(): InstructionBuilder {
+    fun lxor() {
         return insn(Opcodes.LXOR)
     }
 
-    fun i2l(): InstructionBuilder {
+    fun i2l() {
         return insn(Opcodes.I2L)
     }
 
-    fun i2f(): InstructionBuilder {
+    fun i2f() {
         return insn(Opcodes.I2F)
     }
 
-    fun i2d(): InstructionBuilder {
+    fun i2d() {
         return insn(Opcodes.I2D)
     }
 
-    fun l2i(): InstructionBuilder {
+    fun l2i() {
         return insn(Opcodes.L2I)
     }
 
-    fun l2f(): InstructionBuilder {
+    fun l2f() {
         return insn(Opcodes.L2F)
     }
 
-    fun l2d(): InstructionBuilder {
+    fun l2d() {
         return insn(Opcodes.L2D)
     }
 
-    fun f2i(): InstructionBuilder {
+    fun f2i() {
         return insn(Opcodes.F2I)
     }
 
-    fun f2l(): InstructionBuilder {
+    fun f2l() {
         return insn(Opcodes.F2L)
     }
 
-    fun f2d(): InstructionBuilder {
+    fun f2d() {
         return insn(Opcodes.F2D)
     }
 
-    fun d2i(): InstructionBuilder {
+    fun d2i() {
         return insn(Opcodes.D2I)
     }
 
-    fun d2l(): InstructionBuilder {
+    fun d2l() {
         return insn(Opcodes.D2L)
     }
 
-    fun d2f(): InstructionBuilder {
+    fun d2f() {
         return insn(Opcodes.D2F)
     }
 
-    fun i2b(): InstructionBuilder {
+    fun i2b() {
         return insn(Opcodes.I2B)
     }
 
-    fun i2c(): InstructionBuilder {
+    fun i2c() {
         return insn(Opcodes.I2C)
     }
 
-    fun i2s(): InstructionBuilder {
+    fun i2s() {
         return insn(Opcodes.I2S)
     }
 
-    fun lcmp(): InstructionBuilder {
+    fun lcmp() {
         return insn(Opcodes.LCMP)
     }
 
-    fun fcmpl(): InstructionBuilder {
+    fun fcmpl() {
         return insn(Opcodes.FCMPL)
     }
 
-    fun fcmpg(): InstructionBuilder {
+    fun fcmpg() {
         return insn(Opcodes.FCMPG)
     }
 
-    fun dcmpl(): InstructionBuilder {
+    fun dcmpl() {
         return insn(Opcodes.DCMPL)
     }
 
-    fun dcmpg(): InstructionBuilder {
+    fun dcmpg() {
         return insn(Opcodes.DCMPG)
     }
 
-    fun ireturn(): InstructionBuilder {
+    fun ireturn() {
         return insn(Opcodes.IRETURN)
     }
 
-    fun lreturn(): InstructionBuilder {
+    fun lreturn() {
         return insn(Opcodes.LRETURN)
     }
 
-    fun freturn(): InstructionBuilder {
+    fun freturn() {
         return insn(Opcodes.FRETURN)
     }
 
-    fun dreturn(): InstructionBuilder {
+    fun dreturn() {
         return insn(Opcodes.DRETURN)
     }
 
-    fun areturn(): InstructionBuilder {
+    fun areturn() {
         return insn(Opcodes.ARETURN)
     }
 
-    fun returnn(): InstructionBuilder {
+    fun returnn() {
         return insn(Opcodes.RETURN)
     }
 
-    fun arraylength(): InstructionBuilder {
+    fun arraylength() {
         return insn(Opcodes.ARRAYLENGTH)
     }
 
-    fun athrow(): InstructionBuilder {
+    fun athrow() {
         return insn(Opcodes.ATHROW)
     }
 
-    fun monitorEnter(): InstructionBuilder {
+    fun monitorEnter() {
         return insn(Opcodes.MONITORENTER)
     }
 
-    fun monitorExit(): InstructionBuilder {
+    fun monitorExit() {
         return insn(Opcodes.MONITOREXIT)
     }
 
-    fun intInsn(opcode: Int, operand: Int): InstructionBuilder {
+    fun intInsn(opcode: Int, operand: Int) {
         list.add(IntInsnNode(opcode, operand))
-
-        return this
     }
 
-    fun bipush(operand: Int): InstructionBuilder {
+    fun bipush(operand: Int) {
         return intInsn(Opcodes.BIPUSH, operand)
     }
 
-    fun sipush(operand: Int): InstructionBuilder {
+    fun sipush(operand: Int) {
         return intInsn(Opcodes.SIPUSH, operand)
     }
 
-    fun newArray(type: Int): InstructionBuilder {
+    fun newArray(type: Int) {
         return intInsn(Opcodes.NEWARRAY, type)
     }
 
-    fun varInsn(opcode: Int, index: Int): InstructionBuilder {
+    fun varInsn(opcode: Int, index: Int) {
         list.add(VarInsnNode(opcode, index))
 
-        return this
     }
 
-    fun iload(index: Int): InstructionBuilder {
+    fun iload(index: Int) {
         return varInsn(Opcodes.ILOAD, index)
     }
 
-    fun lload(index: Int): InstructionBuilder {
+    fun lload(index: Int) {
         return varInsn(Opcodes.LLOAD, index)
     }
 
-    fun fload(index: Int): InstructionBuilder {
+    fun fload(index: Int) {
         return varInsn(Opcodes.FLOAD, index)
     }
 
-    fun dload(index: Int): InstructionBuilder {
+    fun dload(index: Int) {
         return varInsn(Opcodes.DLOAD, index)
     }
 
-    fun aload(index: Int): InstructionBuilder {
+    fun aload(index: Int) {
         return varInsn(Opcodes.ALOAD, index)
     }
 
-    fun istore(index: Int): InstructionBuilder {
+    fun istore(index: Int) {
         return varInsn(Opcodes.ISTORE, index)
     }
 
-    fun lstore(index: Int): InstructionBuilder {
+    fun lstore(index: Int) {
         return varInsn(Opcodes.LSTORE, index)
     }
 
-    fun fstore(index: Int): InstructionBuilder {
+    fun fstore(index: Int) {
         return varInsn(Opcodes.FSTORE, index)
     }
 
-    fun dstore(index: Int): InstructionBuilder {
+    fun dstore(index: Int) {
         return varInsn(Opcodes.DSTORE, index)
     }
 
-    fun astore(index: Int): InstructionBuilder {
+    fun astore(index: Int) {
         return varInsn(Opcodes.ASTORE, index)
     }
 
-    fun ret(index: Int): InstructionBuilder {
+    fun ret(index: Int) {
         return varInsn(Opcodes.RET, index)
     }
 
-    fun typeInsn(opcode: Int, desc: String): InstructionBuilder {
+    fun typeInsn(opcode: Int, desc: String) {
         list.add(TypeInsnNode(opcode, desc))
-
-        return this
     }
 
-    fun anew(desc: String): InstructionBuilder {
+    fun anew(desc: String) {
         return typeInsn(Opcodes.NEW, desc)
     }
 
-    fun anewArray(desc: String): InstructionBuilder {
+    fun anewArray(desc: String) {
         return typeInsn(Opcodes.ANEWARRAY, desc)
     }
 
-    fun checkCast(desc: String): InstructionBuilder {
+    fun checkCast(desc: String) {
         return typeInsn(Opcodes.CHECKCAST, desc)
     }
 
-    fun instanceOf(desc: String): InstructionBuilder {
+    fun instanceOf(desc: String) {
         return typeInsn(Opcodes.INSTANCEOF, desc)
     }
 
-    fun fieldInsn(opcode: Int, owner: String, name: String, desc: String): InstructionBuilder {
+    fun fieldInsn(opcode: Int, owner: String, name: String, desc: String) {
         list.add(FieldInsnNode(opcode, owner, name, desc))
-
-        return this
     }
 
-    fun getStatic(owner: String, name: String, desc: String): InstructionBuilder {
+    fun getStatic(owner: String, name: String, desc: String) {
         return fieldInsn(Opcodes.GETSTATIC, owner, name, desc)
     }
 
-    fun putStatic(owner: String, name: String, desc: String): InstructionBuilder {
+    fun putStatic(owner: String, name: String, desc: String) {
         return fieldInsn(Opcodes.PUTSTATIC, owner, name, desc)
     }
 
-    fun getField(owner: String, name: String, desc: String): InstructionBuilder {
+    fun getField(owner: String, name: String, desc: String) {
         return fieldInsn(Opcodes.GETFIELD, owner, name, desc)
     }
 
-    fun putField(owner: String, name: String, desc: String): InstructionBuilder {
+    fun putField(owner: String, name: String, desc: String) {
         return fieldInsn(Opcodes.PUTFIELD, owner, name, desc)
     }
 
@@ -607,163 +587,144 @@ class InstructionBuilder {
         name: String,
         desc: String,
         isInterface: Boolean = opcode == Opcodes.INVOKEINTERFACE
-    ): InstructionBuilder {
+    ) {
         list.add(MethodInsnNode(opcode, owner, name, desc, isInterface))
-
-        return this
     }
 
-    fun invokeVirtual(owner: String, name: String, desc: String): InstructionBuilder {
+    fun invokeVirtual(owner: String, name: String, desc: String) {
         return methodInsn(Opcodes.INVOKEVIRTUAL, owner, name, desc, false)
     }
 
-    fun invokeSpecial(owner: String, name: String, desc: String): InstructionBuilder {
+    fun invokeSpecial(owner: String, name: String, desc: String) {
         return methodInsn(Opcodes.INVOKESPECIAL, owner, name, desc, false)
     }
 
-    fun invokeStatic(owner: String, name: String, desc: String): InstructionBuilder {
+    fun invokeStatic(owner: String, name: String, desc: String) {
         return methodInsn(Opcodes.INVOKESTATIC, owner, name, desc, false)
     }
 
-    fun invokeInterface(owner: String, name: String, desc: String): InstructionBuilder {
+    fun invokeInterface(owner: String, name: String, desc: String) {
         return methodInsn(Opcodes.INVOKEINTERFACE, owner, name, desc, true)
     }
 
-    fun invokeDynamic(name: String, desc: String, bsm: Handle, vararg bsmArgs: Any): InstructionBuilder {
+    fun invokeDynamic(name: String, desc: String, bsm: Handle, vararg bsmArgs: Any) {
         list.add(InvokeDynamicInsnNode(name, desc, bsm, *bsmArgs))
-
-        return this
     }
 
-    fun jumpInsn(opcode: Int, label: LabelNode): InstructionBuilder {
+    fun jumpInsn(opcode: Int, label: LabelNode) {
         list.add(JumpInsnNode(opcode, label))
-
-        return this
     }
 
-    fun ifeq(label: LabelNode): InstructionBuilder {
+    fun ifeq(label: LabelNode) {
         return jumpInsn(Opcodes.IFEQ, label)
     }
 
-    fun ifne(label: LabelNode): InstructionBuilder {
+    fun ifne(label: LabelNode) {
         return jumpInsn(Opcodes.IFNE, label)
     }
 
-    fun iflt(label: LabelNode): InstructionBuilder {
+    fun iflt(label: LabelNode) {
         return jumpInsn(Opcodes.IFLT, label)
     }
 
-    fun ifge(label: LabelNode): InstructionBuilder {
+    fun ifge(label: LabelNode) {
         return jumpInsn(Opcodes.IFGE, label)
     }
 
-    fun ifgt(label: LabelNode): InstructionBuilder {
+    fun ifgt(label: LabelNode) {
         return jumpInsn(Opcodes.IFGT, label)
     }
 
-    fun ifle(label: LabelNode): InstructionBuilder {
+    fun ifle(label: LabelNode) {
         return jumpInsn(Opcodes.IFLE, label)
     }
 
-    fun if_icmpeq(label: LabelNode): InstructionBuilder {
+    fun if_icmpeq(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ICMPEQ, label)
     }
 
-    fun if_icmpne(label: LabelNode): InstructionBuilder {
+    fun if_icmpne(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ICMPNE, label)
     }
 
-    fun if_icmplt(label: LabelNode): InstructionBuilder {
+    fun if_icmplt(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ICMPLT, label)
     }
 
-    fun if_icmpge(label: LabelNode): InstructionBuilder {
+    fun if_icmpge(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ICMPGE, label)
     }
 
-    fun if_icmpgt(label: LabelNode): InstructionBuilder {
+    fun if_icmpgt(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ICMPGT, label)
     }
 
-    fun if_icmple(label: LabelNode): InstructionBuilder {
+    fun if_icmple(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ICMPLE, label)
     }
 
-    fun if_acmpeq(label: LabelNode): InstructionBuilder {
+    fun if_acmpeq(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ACMPEQ, label)
     }
 
-    fun if_acmpne(label: LabelNode): InstructionBuilder {
+    fun if_acmpne(label: LabelNode) {
         return jumpInsn(Opcodes.IF_ACMPNE, label)
     }
 
-    fun ifNull(label: LabelNode): InstructionBuilder {
+    fun ifNull(label: LabelNode) {
         return jumpInsn(Opcodes.IFNULL, label)
     }
 
-    fun ifNonNull(label: LabelNode): InstructionBuilder {
+    fun ifNonNull(label: LabelNode) {
         return jumpInsn(Opcodes.IFNONNULL, label)
     }
 
-    fun agoto(label: LabelNode): InstructionBuilder {
+    fun agoto(label: LabelNode) {
         return jumpInsn(Opcodes.GOTO, label)
     }
 
-    fun jsr(label: LabelNode): InstructionBuilder {
+    fun jsr(label: LabelNode) {
         return jumpInsn(Opcodes.JSR, label)
     }
 
-    fun lable(label: LabelNode): InstructionBuilder {
+    fun label(label: LabelNode) {
         list.add(label)
-
-        return this
     }
 
-    fun ldc(value: Any): InstructionBuilder {
+    fun label(label: LabelNode, addInstructions: InstructionBuilder.() -> Unit) {
+        label(label)
+        addInstructions(this)
+    }
+
+    fun ldc(value: Any) {
         list.add(LdcInsnNode(value))
-
-        return this
     }
 
-    fun iinc(varIndex: Int, increment: Int): InstructionBuilder {
+    fun iinc(varIndex: Int, increment: Int) {
         list.add(IincInsnNode(varIndex, increment))
-
-        return this
     }
 
-    fun tableSwitch(min: Int, max: Int, defaultLabel: LabelNode, vararg labels: LabelNode): InstructionBuilder {
+    fun tableSwitch(min: Int, max: Int, defaultLabel: LabelNode, vararg labels: LabelNode) {
         list.add(TableSwitchInsnNode(min, max, defaultLabel, *labels))
-
-        return this
     }
 
-    fun lookupSwitch(defaultLabel: LabelNode, keys: IntArray, labels: Array<LabelNode>): InstructionBuilder {
+    fun lookupSwitch(defaultLabel: LabelNode, keys: IntArray, labels: Array<LabelNode>) {
         list.add(LookupSwitchInsnNode(defaultLabel, keys, labels))
-
-        return this
     }
 
-    fun multiANewArray(desc: String, numDimensions: Int): InstructionBuilder {
+    fun multiANewArray(desc: String, numDimensions: Int) {
         list.add(MultiANewArrayInsnNode(desc, numDimensions))
-
-        return this
     }
 
-    fun frame(type: Int, numLocal: Int, local: Array<Any>, numStack: Int, stack: Array<Any>): InstructionBuilder {
+    fun frame(type: Int, numLocal: Int, local: Array<Any>, numStack: Int, stack: Array<Any>) {
         list.add(FrameNode(type, numLocal, local, numStack, stack))
-
-        return this
     }
 
-    fun line(line: Int, start: LabelNode): InstructionBuilder {
+    fun line(line: Int, start: LabelNode) {
         list.add(LineNumberNode(line, start))
-
-        return this
     }
 
-    fun ainsn(insn: AbstractInsnNode): InstructionBuilder {
+    fun ainsn(insn: AbstractInsnNode) {
         list.add(insn)
-
-        return this
     }
 }

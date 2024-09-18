@@ -16,6 +16,13 @@ class MethodBuilder(
         return method.maxLocals++
     }
 
+    fun allocBigVariable(): Int {
+        val index = method.maxLocals
+
+        method.maxLocals += 2
+        return index
+    }
+
     fun getInstructionBuilder(): InstructionBuilder {
         return instructionBuilder
     }

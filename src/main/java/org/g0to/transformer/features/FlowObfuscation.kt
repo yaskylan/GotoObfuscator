@@ -40,28 +40,30 @@ class FlowObfuscation(
                         val trapLabels = Array(ThreadLocalRandom.current().nextInt(5, 10)) { LabelNode() }
                         val insertPosition = ThreadLocalRandom.current().nextInt(trapLabels.size)
 
-                        builder.number(insertPosition)
-                            .tableSwitch(0, trapLabels.size - 1, trapLabels[insertPosition], *Array(trapLabels.size) {
+                        builder.block {
+                            number(insertPosition)
+                            tableSwitch(0, trapLabels.size - 1, trapLabels[insertPosition], *Array(trapLabels.size) {
                                 if (it == insertPosition) {
                                     nextLabel
                                 } else {
                                     trapLabels[it]
                                 }
                             })
+                        }
 
                         for (trapLabel in trapLabels) {
-                            builder.lable(trapLabel)
-                                   .getStatic("java/lang/System", "out", "Ljava/io/PrintStream;")
-                                   .number(ThreadLocalRandom.current().nextInt())
-                                   .invokeVirtual("java/io/PrintStream", "println", "(I)V")
-
-                            builder.number(0)
-                                   .ifeq(instruction.label)
-                                   .agoto(trapLabels.random(ThreadLocalRandom.current().asKotlinRandom()))
+                            builder.label(trapLabel) {
+                                getStatic("java/lang/System", "out", "Ljava/io/PrintStream;")
+                                number(ThreadLocalRandom.current().nextInt())
+                                invokeVirtual("java/io/PrintStream", "println", "(I)V")
+                                number(0)
+                                ifeq(instruction.label)
+                                agoto(trapLabels.random(ThreadLocalRandom.current().asKotlinRandom()))
+                            }
                         }
 
                         if (nextLabel != instruction.next) {
-                            builder.lable(nextLabel)
+                            builder.label(nextLabel)
                         }
 
                         buffer.insert(instruction, builder.build())

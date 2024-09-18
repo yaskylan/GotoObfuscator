@@ -23,17 +23,30 @@ class GotoReplacer(
             for (instruction in methodNode.instructions) {
                 if (instruction.opcode == Opcodes.GOTO) {
                     val n = instruction as JumpInsnNode
-                    val b = InstructionBuilder()
-                    val l0 = LabelNode()
-                    val l1 = LabelNode()
-                    val l2 = LabelNode()
 
-                    b.number(1).tableSwitch(0, 1, l2, l0, l1)
-                    b.lable(l0).aconstNull().ifNull(l1).agoto(l2)
-                    b.lable(l1).agoto(n.label)
-                    b.lable(l2).aconstNull().athrow()
+                    buffer.replace(n, InstructionBuilder.buildInsnList {
+                        val l1 = LabelNode()
+                        val l2 = LabelNode()
+                        val l3 = LabelNode()
 
-                    buffer.replace(n, b.build())
+                        number(1)
+                        tableSwitch(0, 1, l3, l1, l2)
+
+                        label(l1) {
+                            aconstNull()
+                            ifNull(l1)
+                            agoto(l2)
+                        }
+
+                        label(l2) {
+                            agoto(n.label)
+                        }
+
+                        label(l3) {
+                            aconstNull()
+                            athrow()
+                        }
+                    })
 
                     accumulated++
                 }
