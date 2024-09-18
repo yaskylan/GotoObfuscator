@@ -4,11 +4,8 @@ public class Main {
     public static void main(String[] args) {
         KotlinMain.INSTANCE.runKt();
 
-        final Iface iface = new Test();
-        final Iface2 iface2 = new Test();
-
-        System.out.println(iface.test("123", 1, 11L));
-        System.out.println(iface2.test("321", 2, 10L));
+        System.out.println("Genshin impact");
+        System.out.println("你说得对, 但是原神后面忘了");
     }
 
     public static class Test implements Iface, Iface2 {
