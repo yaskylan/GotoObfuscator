@@ -16,6 +16,7 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 class NameObfuscation(
     setting: TransformerBaseSetting
@@ -63,7 +64,7 @@ class NameObfuscation(
             logger.info("Using multithreading, thread pool size is ${setting.threadPoolSize}")
             logger.info("Building relative methods")
 
-            val executor = Executors.newFixedThreadPool(setting.threadPoolSize) as ThreadPoolExecutor
+            val executor = Executors.newFixedThreadPool(setting.threadPoolSize)
 
             for (classStruct in classTree.classes.values) {
                 if (classStruct.isExternal()
@@ -93,11 +94,8 @@ class NameObfuscation(
                 }
             }
 
-            while (executor.activeCount != 0) {
-                Thread.sleep(250)
-            }
-
             executor.shutdown()
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
         }
 
         for (classStruct in classTree.classes.values) {
