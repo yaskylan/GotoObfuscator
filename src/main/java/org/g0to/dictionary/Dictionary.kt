@@ -36,6 +36,10 @@ open class Dictionary(
         blackList.add(s)
     }
 
+    fun addToBlacklist(blackList: Collection<String>) {
+        this.blackList.addAll(blackList)
+    }
+
     private fun updateExpectedSize() {
         this.expectedSize = words.size.toDouble().pow(length).toInt()
     }

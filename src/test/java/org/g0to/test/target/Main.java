@@ -6,6 +6,27 @@ public class Main {
 
         System.out.println("Genshin impact");
         System.out.println("你说得对, 但是原神后面忘了");
+
+        final GenericTest<KotlinMain.KotlinObject> genericTest = new GenericTest<>(new KotlinMain.KotlinObject());
+        System.out.println(genericTest.getValue());
+        genericTest.setValue(new KotlinMain.KotlinObject());
+        System.out.println(genericTest.getValue());
+    }
+
+    public static class GenericTest<T> {
+        private T value;
+
+        public GenericTest(T value) {
+            this.value = value;
+        }
+
+        public T getValue() {
+            return value;
+        }
+
+        public void setValue(T value) {
+            this.value = value;
+        }
     }
 
     public static class Test implements Iface, Iface2 {

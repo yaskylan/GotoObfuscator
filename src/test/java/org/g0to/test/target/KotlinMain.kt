@@ -4,4 +4,6 @@ object KotlinMain {
     fun runKt() {
 
     }
+
+    class KotlinObject()
 }
