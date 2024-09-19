@@ -1,6 +1,10 @@
+import java.nio.charset.StandardCharsets
+import java.time.Instant
+
 plugins {
     kotlin("jvm") version "2.0.0"
     id("java")
+    id("com.gradleup.shadow") version "8.3.2"
 }
 
 group = "org.g0to"
@@ -8,6 +12,36 @@ version = "1.0.0"
 
 tasks.withType<JavaCompile> {
     options.release.set(21)
+}
+
+tasks.withType<Copy> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks {
+    shadowJar {
+        archiveFileName.set("Goto.jar")
+        archiveClassifier.set("")
+
+        manifest {
+            attributes("Main-Class" to "org.g0to.MainKt")
+        }
+
+        exclude("META-INF/MANIFEST.MF")
+
+        kotlin.run {
+            val buildInfoFile = File(buildDir, "buildinfo")
+
+            buildInfoFile.bufferedWriter(StandardCharsets.UTF_8).use { writer ->
+                writer.write("${project.version}\n")
+                writer.write("${Instant.now()}\n")
+            }
+
+            from(buildInfoFile) {
+                into("")
+            }
+        }
+    }
 }
 
 sourceSets {

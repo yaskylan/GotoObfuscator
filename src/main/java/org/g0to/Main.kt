@@ -12,6 +12,12 @@ import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 
 fun main(args: Array<String>) {
+    println("GOTO Obfuscator")
+    println(BuildInfo.getBuildInfo().toString())
+    println("QQ Group: 967325513")
+    println("TG Group: https://t.me/+LBe1J5tZekFkYjI1")
+    println("Github:   https://github.com/yaskylan/GotoObfuscator/")
+
     val commandLine = DefaultParser().parse(Options().init(), args)
     val conf = parseConf(requireNotNull(commandLine.getOptionValue("c")) { "Configuration path is required" })
     Configurator.setRootLevel(Level.getLevel(conf.logLevel))
