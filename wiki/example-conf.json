@@ -19,7 +19,9 @@
     "value": [
       "a--z",
       "A--Z",
-      "0--9"
+      "0--9",
+      "原",
+      "神"
     ],
     "baseLength": 1,
     "blacklist": [
