@@ -2,4 +2,5 @@
 
 ---
 
-Simple java obfuscator
+Simple java obfuscator  
+Usage: `java -jar Goto.jar -c <configuration path>`
