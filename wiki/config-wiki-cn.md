@@ -31,7 +31,7 @@ Log4j的输出等级 可选项如下
 编译此Jar的JDK路径 示例如下
 - `C:\\Program Files\\jdk-21`
 - `C:\\Program Files\\jdk-1.8`
-- `/usr/bin/java/jdk21`
+- `/usr/local/java/jdk21`
 
 ---
 
