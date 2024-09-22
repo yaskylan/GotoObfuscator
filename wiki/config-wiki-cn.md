@@ -14,6 +14,12 @@ Log4j的输出等级 可选项如下
 
 ---
 
+> **analyze**: Boolean
+
+对类进行分析, 仅用于内部调试
+
+---
+
 > **inputPath**: String
 
 输入Jar的路径
@@ -44,6 +50,13 @@ Log4j的输出等级 可选项如下
 - `11`
 - `8`
 - `6`
+
+---
+
+> **extractJars**: String[]
+
+要进行提取的Jar文件的目录或Jar文件本身  
+格式与`libraries`相同
 
 ---
 
