@@ -15,7 +15,6 @@ import org.objectweb.asm.tree.ClassNode
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
 class NameObfuscation(
@@ -236,12 +235,14 @@ class NameObfuscation(
                 continue
             }
 
-            val cacheNode = ClassNode()
-            val classRemapper = ClassRemapper(cacheNode, treeRemapper)
+            val newClassNode = ClassNode()
+            val classRemapper = ClassRemapper(newClassNode, treeRemapper)
             val oldName = classStruct.getClassName()
 
             classStruct.classWrapper.classNode.accept(classRemapper)
-            classStruct.classWrapper.reloadClassNode(cacheNode)
+            classStruct.classWrapper.reloadClassNode(newClassNode)
+
+            newClassNode.sourceFile = newClassNode.name + ".java"
 
             if (classStruct.hasMappedName()) {
                 (classStruct.classWrapper.classLoader as TargetJar).updateClassKey(oldName, classStruct.getFinalName())
