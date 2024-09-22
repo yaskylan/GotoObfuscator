@@ -8,6 +8,9 @@ public class Transformers {
     @SerializedName("NameObfuscation")
     public NameObfuscation.Setting nameObfuscation;
 
+    @SerializedName("VariableRename")
+    public VariableRename.Setting variableRename;
+
     @SerializedName("StringEncryption")
     public StringEncryption.Setting stringEncryption;
 

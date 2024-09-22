@@ -11,7 +11,12 @@ class VariableRename(
 
     override fun run(core: Core) {
         core.foreachTargetMethods { _, method ->
+            if (method.localVariables == null || method.localVariables.isEmpty()) {
+                return@foreachTargetMethods
+            }
+
             for (localVariable in method.localVariables) {
+                localVariable.name = "v"
             }
         }
     }
