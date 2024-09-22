@@ -10,6 +10,9 @@ public class Configuration {
     @SerializedName("logLevel")
     public String logLevel = "info";
 
+    @SerializedName("analyze")
+    public Boolean analyze = false;
+
     @SerializedName("inputPath")
     public String inputPath;
 
@@ -21,6 +24,9 @@ public class Configuration {
 
     @SerializedName("javaVersion")
     public Integer javaVersion;
+
+    @SerializedName("extractJars")
+    public List<String> extractJars = Collections.emptyList();
 
     @SerializedName("libraries")
     public List<String> libraries = Collections.emptyList();

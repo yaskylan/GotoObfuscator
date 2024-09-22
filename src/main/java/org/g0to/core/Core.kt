@@ -18,6 +18,7 @@ import org.objectweb.asm.tree.analysis.Analyzer
 import org.objectweb.asm.tree.analysis.AnalyzerException
 import org.objectweb.asm.tree.analysis.BasicVerifier
 import java.io.BufferedOutputStream
+import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -97,18 +98,19 @@ class Core(
             transformer.run(this)
         }
 
-        logger.info("Analyzer classes")
+        if (conf.analyze) {
+            logger.info("Analyzer classes")
 
-        val analyzer = Analyzer(BasicVerifier())
-        foreachTargetMethods { classWrapper, methodNode ->
-            try {
-                analyzer.analyzeAndComputeMaxs(classWrapper.getClassName(), methodNode)
-            } catch (e: AnalyzerException) {
-                val dumper = AnalyzerExceptionDumper(e, classWrapper.classNode, methodNode)
-                dumper.parse()
-                dumper.print()
+            foreachTargetMethods { classWrapper, methodNode ->
+                try {
+                    Analyzer(BasicVerifier()).analyzeAndComputeMaxs(classWrapper.getClassName(), methodNode)
+                } catch (e: AnalyzerException) {
+                    val dumper = AnalyzerExceptionDumper(e, classWrapper.classNode, methodNode)
+                    dumper.parse()
+                    dumper.print()
 
-                throw RuntimeException(e)
+                    throw RuntimeException(e)
+                }
             }
         }
     }
@@ -130,7 +132,7 @@ class Core(
     fun done() {
         logger.info("Done")
 
-        val output = BufferedOutputStream(FileOutputStream(conf.outputPath))
-        targetJar.writeModified(output)
+        File(conf.outputPath).parentFile.mkdirs()
+        targetJar.writeModified(BufferedOutputStream(FileOutputStream(conf.outputPath)))
     }
 }

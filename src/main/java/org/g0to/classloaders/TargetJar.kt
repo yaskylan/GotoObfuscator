@@ -8,10 +8,16 @@ import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import java.io.OutputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
+import java.util.zip.ZipException
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
+import kotlin.io.path.name
 
 class TargetJar(private val core: Core) : ASMClassLoader {
     companion object {
@@ -21,6 +27,7 @@ class TargetJar(private val core: Core) : ASMClassLoader {
     private val processFunctions = EnumMap<JarProcessFunctionId, MutableList<ValueProcessor<*>>>(JarProcessFunctionId::class.java)
     private val classes = HashMap<String, ClassWrapper>()
     private val resources = ArrayList<String>()
+    private val extractJars = ArrayList<Path>()
 
     init {
         JarProcessFunctionId.entries.forEach {
@@ -32,6 +39,22 @@ class TargetJar(private val core: Core) : ASMClassLoader {
         JarFile(core.conf.inputPath).use { jarFile ->
             for (entry in jarFile.entries()) {
                 parseEntry(jarFile, entry)
+            }
+        }
+
+        for (s in core.conf.extractJars) {
+            val path = Path.of(s).toAbsolutePath()
+
+            if (Files.isDirectory(path)) {
+                Files.walk(path)
+                    .filter {
+                        it != path && !it.endsWith(".jar")
+                    }
+                    .forEach {
+                        extractJars.add(it.toAbsolutePath())
+                    }
+            } else {
+                extractJars.add(path)
             }
         }
     }
@@ -76,23 +99,55 @@ class TargetJar(private val core: Core) : ASMClassLoader {
     }
 
     fun writeModified(out: OutputStream) {
+        logger.info("Writing jar")
+
         val rawJar = JarFile(core.conf.inputPath)
 
         JarOutputStream(out).use { jos ->
             resources.forEach {
-                jos.putNextEntry(JarEntry(
-                    processFunc(JarProcessFunctionId.RESOURCE_NAME, it)
-                ))
+                val entry = JarEntry(processFunc(JarProcessFunctionId.RESOURCE_NAME, it))
+
+                jos.putNextEntry(entry)
                 rawJar.getInputStream(rawJar.getEntry(it)).transferTo(jos)
                 jos.closeEntry()
             }
 
             classes.forEach {
-                jos.putNextEntry(JarEntry(
-                    processFunc(JarProcessFunctionId.CLASS_NAME, it.value.classNode.name + ".class")
-                ))
+                val entry = JarEntry(processFunc(JarProcessFunctionId.CLASS_NAME, it.value.classNode.name + ".class"))
+
+                jos.putNextEntry(entry)
                 jos.write(it.value.toByteArray())
                 jos.closeEntry()
+            }
+
+            extractJars(jos)
+        }
+    }
+
+    private fun extractJars(out: JarOutputStream) {
+        for (path in extractJars) {
+            logger.info("Extracting jar: ${path.name}")
+
+            try {
+                val jarFile = JarFile(path.toFile())
+
+                for (entry in jarFile.entries()) {
+                    try {
+                        out.putNextEntry(JarEntry(entry))
+                    } catch (e: ZipException) {
+                        if (e.message!!.startsWith("duplicate entry:")) {
+                            logger.warn(e.message)
+                            continue
+                        } else {
+                            throw e
+                        }
+                    }
+
+                    jarFile.getInputStream(entry).transferTo(out)
+                    out.closeEntry()
+                }
+            } catch (e: Throwable) {
+                logger.error("Can't extract jar ${path.name}", e)
             }
         }
     }
