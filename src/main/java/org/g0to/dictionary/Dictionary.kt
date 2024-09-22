@@ -41,7 +41,17 @@ open class Dictionary(
     }
 
     private fun updateExpectedSize() {
-        this.expectedSize = words.size.toDouble().pow(length).toInt()
+        if (expectedSize == Int.MAX_VALUE) {
+            throw RuntimeException()
+        }
+
+        var pow = words.size.toDouble().pow(length)
+
+        if (pow > Int.MAX_VALUE) {
+            pow = Int.MAX_VALUE.toDouble()
+        }
+
+        this.expectedSize = pow.toInt()
     }
 
     fun randString(): String {
