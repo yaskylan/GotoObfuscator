@@ -55,7 +55,7 @@ class Core(
     private fun addLibrary(path: Path) {
         if (Files.isDirectory(path)) {
             Files.list(path).forEach {
-                if (it.name.endsWith(".jar")) {
+                if (Files.isDirectory(it) || it.name.endsWith(".jar")) {
                     addLibrary(it)
                 }
             }
@@ -132,7 +132,7 @@ class Core(
     fun done() {
         logger.info("Done")
 
-        File(conf.outputPath).parentFile.mkdirs()
+        File(conf.outputPath).parentFile?.mkdirs()
         targetJar.writeModified(BufferedOutputStream(FileOutputStream(conf.outputPath)))
     }
 }
