@@ -40,7 +40,18 @@ class TreeRemapper(
     }
 
     override fun mapAnnotationAttributeName(descriptor: String, name: String): String {
-        return mapMethodName(Type.getType(descriptor).className.replace(".", "/"), name, descriptor)
+        val classStruct = classTree.classes[Type.getType(descriptor).internalName]
+        if (classStruct == null || classStruct.isExternal()) {
+            return name
+        }
+
+        for (method in classStruct.getMethods()) {
+            if (method.name().equals(name)) {
+                return method.mappedName ?: name
+            }
+        }
+
+        return name
     }
 
     override fun mapRecordComponentName(owner: String, name: String, descriptor: String): String {
@@ -48,7 +59,7 @@ class TreeRemapper(
     }
 
     override fun mapInvokeDynamicMethodName(name: String, descriptor: String): String {
-        val classStruct = classTree.classes[Type.getReturnType(descriptor).className.replace(".", "/")]
+        val classStruct = classTree.classes[Type.getReturnType(descriptor).internalName]
         if (classStruct == null || classStruct.isExternal()) {
             return name
         }
