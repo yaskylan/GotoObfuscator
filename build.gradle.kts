@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.g0to"
-version = "1.0.0"
+version = "1.0.1"
 
 tasks.withType<JavaCompile> {
     options.release.set(21)
