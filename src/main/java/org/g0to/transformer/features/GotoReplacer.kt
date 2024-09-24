@@ -8,6 +8,7 @@ import org.g0to.utils.InstructionBuilder
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
+import java.util.concurrent.ThreadLocalRandom
 
 class GotoReplacer(
     setting: TransformerBaseSetting
@@ -19,36 +20,60 @@ class GotoReplacer(
 
         core.foreachTargetMethods { _, methodNode ->
             val buffer = InstructionBuffer(methodNode)
+            var varIndex = -1
+            var randNumber = 0
 
             for (instruction in methodNode.instructions) {
                 if (instruction.opcode == Opcodes.GOTO) {
                     val n = instruction as JumpInsnNode
 
                     buffer.replace(n, InstructionBuilder.buildInsnList {
+                        if (varIndex == -1) {
+                            varIndex = methodNode.maxLocals++
+                            randNumber = ThreadLocalRandom.current().nextInt()
+                        }
+
                         val l1 = LabelNode()
                         val l2 = LabelNode()
                         val l3 = LabelNode()
 
+                        label(l1)
+                        iload(varIndex)
+                        number(randNumber)
+                        if_icmpeq(l3)
                         number(1)
-                        tableSwitch(0, 1, l3, l1, l2)
+                        ifeq(l1)
 
-                        label(l1) {
-                            aconstNull()
-                            ifNull(l1)
-                            agoto(l2)
-                        }
+                        label(l2)
+                        iload(varIndex)
+                        number(randNumber)
+                        if_icmpeq(l3)
+                        number(0)
+                        ifeq(instruction.label)
+                        agoto(l3)
 
-                        label(l2) {
-                            agoto(n.label)
-                        }
-
-                        label(l3) {
-                            aconstNull()
-                            athrow()
-                        }
+                        label(l3)
+                        number(0)
+                        ifeq(l2)
+                        agoto(l1)
                     })
 
                     accumulated++
+                }
+            }
+
+            if (varIndex != -1) {
+                val initVar = InstructionBuilder.buildInsnList {
+                    number(randNumber)
+                    istore(varIndex)
+                }
+
+                if (methodNode.instructions.first is LabelNode) {
+                    buffer.insert(methodNode.instructions.first, initVar)
+                } else {
+                    initVar.insertBefore(initVar.first, LabelNode())
+
+                    buffer.insertBefore(methodNode.instructions.first, initVar)
                 }
             }
 
