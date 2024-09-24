@@ -47,11 +47,13 @@ tasks {
 sourceSets {
     main {
         java.srcDirs("src/main/java")
+        kotlin.srcDirs("src/main/java")
         resources.srcDir("src/main/resources")
     }
 
     test {
         java.srcDir("src/test/java")
+        kotlin.srcDirs("src/test/java")
         resources.srcDir("src/test/resources")
     }
 }
