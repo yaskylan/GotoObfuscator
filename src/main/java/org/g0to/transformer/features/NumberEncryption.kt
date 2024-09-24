@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 class NumberEncryption(
     setting: TransformerBaseSetting
-) : Transformer<NumberEncryption.Setting>("StringEncryption", setting as Setting) {
+) : Transformer<NumberEncryption.Setting>("NumberEncryption", setting as Setting) {
     class Setting(
         @SerializedName("doInt")
         val doInt: Boolean = true,
@@ -29,6 +29,7 @@ class NumberEncryption(
     ) : TransformerBaseSetting()
 
     override fun run(core: Core) {
+        // TODO Harder encryption
         val accumulatedInt = ValueWrapper(0)
         val accumulatedLong = ValueWrapper(0)
         val accumulatedFloat = ValueWrapper(0)
