@@ -19,13 +19,23 @@ fun main(args: Array<String>) {
     println("Github:   https://github.com/yaskylan/GotoObfuscator/")
 
     val commandLine = DefaultParser().parse(Options().init(), args)
-    val conf = parseConf(requireNotNull(commandLine.getOptionValue("c")) { "Configuration path is required" })
+
+    if (commandLine.getOptionValue("h") != null || commandLine.getOptionValue("c") == null) {
+        printHelp()
+        return
+    }
+
+    val conf = parseConf(commandLine.getOptionValue("c"))
     Configurator.setRootLevel(Level.getLevel(conf.logLevel))
 
     val core = Core(conf)
     core.init()
     core.run()
     core.done()
+}
+
+fun printHelp() {
+    println("Usage: java -jar Goto.jar -c <configuration path>")
 }
 
 fun parseConf(path: String): Configuration {
@@ -36,7 +46,8 @@ fun parseConf(path: String): Configuration {
 }
 
 fun Options.init(): Options {
-    addRequiredOption("c", "config", true, "The configuration")
+    addOption("h", "help", false, "Print help")
+    addOption("c", "config", true, "The configuration")
 
     return this
 }
