@@ -1,4 +1,4 @@
-package org.g0to.transformer.features
+package org.g0to.transformer.features.stringencryption
 
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
 import org.g0to.core.Core
@@ -12,6 +12,7 @@ import org.g0to.utils.Utils.nextNonZeroInt
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.InsnList
+import org.objectweb.asm.tree.InvokeDynamicInsnNode
 import org.objectweb.asm.tree.LabelNode
 import org.objectweb.asm.tree.MethodNode
 import java.util.concurrent.ThreadLocalRandom
@@ -27,10 +28,12 @@ class StringEncryption(
         core.foreachTargetClasses { classWrapper ->
             var shouldProcess = false
 
-            for (method in classWrapper.getMethods()) {
-                if (method.instructions.find { ASMUtils.isString(it) } != null) {
-                    shouldProcess = true
-                    break
+            methodForeach@ for (method in classWrapper.getMethods()) {
+                for (instruction in method.instructions) {
+                    if (ASMUtils.isString(instruction) || isMakeConcatWithConstants(instruction)) {
+                        shouldProcess = true
+                        break@methodForeach
+                    }
                 }
             }
 
@@ -41,30 +44,56 @@ class StringEncryption(
             val classDictionary = core.conf.dictionary.newClassDictionary(classWrapper)
             val keyOfClass = ThreadLocalRandom.current().nextInt(0xFFFFFF, Int.MAX_VALUE)
             val keyMap = IntArray(256) { ThreadLocalRandom.current().nextNonZeroInt() }
-            val plainTexts = ArrayList<PlainText>()
             val storeField = FieldNode(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_FINAL, classDictionary.randFieldName(), "[Ljava/lang/String;", null, null)
             val markField = FieldNode(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_FINAL, classDictionary.randFieldName(), "[B", null, null)
             val decryptMethod = createDecryptMethod(keyOfClass, keyMap, classDictionary, classWrapper.getClassName(), storeField, markField)
+            val indyConcatMethods = ArrayList<MethodNode>()
+            val plainTexts = ArrayList<PlainText>()
+
+            for (field in classWrapper.getFields()) {
+                if (field.value is String) {
+                    ASMUtils.getClinit(classWrapper.classNode).instructions.insert(InstructionBuilder.buildInsnList {
+                        ldc(field.value)
+                        putStatic(classWrapper.getClassName(), field.name, field.desc)
+                    })
+
+                    field.value = null
+                }
+            }
 
             for (methodNode in classWrapper.getMethods()) {
                 val buffer = InstructionBuffer(methodNode)
 
                 for (instruction in methodNode.instructions) {
+                    if (isMakeConcatWithConstants(instruction)) {
+                        val concatMethod = processMakeConcatWithConstants(
+                            this,
+                            classWrapper,
+                            instruction as InvokeDynamicInsnNode,
+                            buffer,
+                            plainTexts,
+                            keyOfClass,
+                            decryptMethod
+                        )
+
+                        indyConcatMethods.add(concatMethod)
+                        accumulated++
+
+                        continue
+                    }
+
                     if (!ASMUtils.isString(instruction)) {
                         continue
                     }
 
                     val plainText = ASMUtils.getString(instruction)
-                    val key = ByteArray(8).apply {
-                        ThreadLocalRandom.current().nextBytes(this)
-                    }
+                    val key = generateKey()
 
                     buffer.replace(instruction, InstructionBuilder.buildInsnList {
                         number((plainTexts.size xor keyOfClass) ushr 16)
-                        number((plainTexts.size xor keyOfClass) and 0xFFFF)
+                        number((plainTexts.size xor keyOfClass) and  0xFFFF)
                         number(getLong(key))
-                        methodInsn(
-                            Opcodes.INVOKESTATIC,
+                        invokeStatic(
                             classWrapper.getClassName(),
                             decryptMethod.name,
                             decryptMethod.desc,
@@ -82,6 +111,10 @@ class StringEncryption(
             classWrapper.addField(storeField)
             classWrapper.addField(markField)
             classWrapper.addMethod(decryptMethod)
+
+            indyConcatMethods.forEach {
+                classWrapper.addMethod(it)
+            }
 
             // Process clinit
             ASMUtils.getClinit(classWrapper.classNode)
@@ -348,7 +381,15 @@ class StringEncryption(
         }
     }
 
-    private fun getLong(bArray: ByteArray): Long {
+    fun generateKey(): ByteArray {
+        return ByteArray(8).apply {
+            do {
+                ThreadLocalRandom.current().nextBytes(this)
+            } while (this.all { it.toInt() == 0 })
+        }
+    }
+
+    fun getLong(bArray: ByteArray): Long {
         return ((bArray[0].toLong() and 0xFFL) shl 56  or (
                 (bArray[1].toLong() and 0xFFL) shl 48) or (
                 (bArray[2].toLong() and 0xFFL) shl 40) or (
@@ -359,7 +400,7 @@ class StringEncryption(
                  bArray[7].toLong() and 0xFFL))
     }
 
-    private class PlainText(
+    class PlainText(
         val value: String,
         val key: ByteArray
     )

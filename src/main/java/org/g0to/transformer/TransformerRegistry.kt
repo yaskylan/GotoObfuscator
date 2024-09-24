@@ -3,6 +3,7 @@ package org.g0to.transformer
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
 import org.g0to.transformer.features.*
 import org.g0to.transformer.features.nameobf.NameObfuscation
+import org.g0to.transformer.features.stringencryption.StringEncryption
 
 object TransformerRegistry {
     private val registry = HashMap<String, Class<out Transformer<*>>>()

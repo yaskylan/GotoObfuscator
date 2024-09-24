@@ -3,6 +3,7 @@ package org.g0to.conf.transformer.settings;
 import com.google.gson.annotations.SerializedName;
 import org.g0to.transformer.features.*;
 import org.g0to.transformer.features.nameobf.NameObfuscation;
+import org.g0to.transformer.features.stringencryption.StringEncryption;
 
 public class Transformers {
     @SerializedName("NameObfuscation")
