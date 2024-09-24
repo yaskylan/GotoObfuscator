@@ -2,6 +2,7 @@ package org.g0to.utils
 
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
 
 class InstructionBuilder {
@@ -16,6 +17,14 @@ class InstructionBuilder {
 
     fun build(): InsnList {
         return list
+    }
+
+    fun size(): Int {
+        return list.size()
+    }
+
+    fun clear() {
+        list.clear()
     }
 
     fun block(build: InstructionBuilder.() -> Unit) {
@@ -99,7 +108,6 @@ class InstructionBuilder {
 
     fun aconstNull() {
         insn(Opcodes.ACONST_NULL)
-
     }
 
     fun insn(opcode: Int) {
@@ -108,371 +116,467 @@ class InstructionBuilder {
     }
 
     fun nop() {
-        return insn(Opcodes.NOP)
+        insn(Opcodes.NOP)
+    }
+
+    fun xaload(type: Type) {
+        when (type.sort) {
+            Type.BOOLEAN -> {
+                iaload()
+            }
+            Type.CHAR -> {
+                caload()
+            }
+            Type.BYTE -> {
+                baload()
+            }
+            Type.SHORT -> {
+                saload()
+            }
+            Type.INT -> {
+                iaload()
+            }
+            Type.FLOAT -> {
+                faload()
+            }
+            Type.LONG -> {
+                laload()
+            }
+            Type.DOUBLE -> {
+                daload()
+            }
+            Type.OBJECT, Type.ARRAY -> {
+                aaload()
+            }
+            else -> {
+                throw UnsupportedOperationException(type.toString())
+            }
+        }
     }
 
     fun iaload() {
-        return insn(Opcodes.IALOAD)
+        insn(Opcodes.IALOAD)
     }
 
     fun laload() {
-        return insn(Opcodes.LALOAD)
+        insn(Opcodes.LALOAD)
     }
 
     fun faload() {
-        return insn(Opcodes.FALOAD)
+        insn(Opcodes.FALOAD)
     }
 
     fun daload() {
-        return insn(Opcodes.DALOAD)
+        insn(Opcodes.DALOAD)
     }
 
     fun aaload() {
-        return insn(Opcodes.AALOAD)
+        insn(Opcodes.AALOAD)
     }
 
     fun baload() {
-        return insn(Opcodes.BALOAD)
+        insn(Opcodes.BALOAD)
     }
 
     fun caload() {
-        return insn(Opcodes.CALOAD)
+        insn(Opcodes.CALOAD)
     }
 
     fun saload() {
-        return insn(Opcodes.SALOAD)
+        insn(Opcodes.SALOAD)
+    }
+
+    fun xastore(type: Type) {
+        when (type.sort) {
+            Type.BOOLEAN -> {
+                iastore()
+            }
+            Type.CHAR -> {
+                castore()
+            }
+            Type.BYTE -> {
+                bastore()
+            }
+            Type.SHORT -> {
+                sastore()
+            }
+            Type.INT -> {
+                iastore()
+            }
+            Type.FLOAT -> {
+                fastore()
+            }
+            Type.LONG -> {
+                lastore()
+            }
+            Type.DOUBLE -> {
+                dastore()
+            }
+            Type.OBJECT, Type.ARRAY -> {
+                aastore()
+            }
+            else -> {
+                throw UnsupportedOperationException(type.toString())
+            }
+        }
     }
 
     fun iastore() {
-        return insn(Opcodes.IASTORE)
+        insn(Opcodes.IASTORE)
     }
 
     fun lastore() {
-        return insn(Opcodes.LASTORE)
+        insn(Opcodes.LASTORE)
     }
 
     fun fastore() {
-        return insn(Opcodes.FASTORE)
+        insn(Opcodes.FASTORE)
     }
 
     fun dastore() {
-        return insn(Opcodes.DASTORE)
+        insn(Opcodes.DASTORE)
     }
 
     fun aastore() {
-        return insn(Opcodes.AASTORE)
+        insn(Opcodes.AASTORE)
     }
 
     fun bastore() {
-        return insn(Opcodes.BASTORE)
+        insn(Opcodes.BASTORE)
     }
 
     fun castore() {
-        return insn(Opcodes.CASTORE)
+        insn(Opcodes.CASTORE)
     }
 
     fun sastore() {
-        return insn(Opcodes.SASTORE)
+        insn(Opcodes.SASTORE)
     }
 
     fun pop() {
-        return insn(Opcodes.POP)
+        insn(Opcodes.POP)
     }
 
     fun pop2() {
-        return insn(Opcodes.POP2)
+        insn(Opcodes.POP2)
     }
 
     fun dup() {
-        return insn(Opcodes.DUP)
+        insn(Opcodes.DUP)
     }
 
     fun dupx1() {
-        return insn(Opcodes.DUP_X1)
+        insn(Opcodes.DUP_X1)
     }
 
     fun dupx2() {
-        return insn(Opcodes.DUP_X2)
+        insn(Opcodes.DUP_X2)
     }
 
     fun dup2() {
-        return insn(Opcodes.DUP2)
+        insn(Opcodes.DUP2)
     }
 
     fun dup2x1() {
-        return insn(Opcodes.DUP2_X1)
+        insn(Opcodes.DUP2_X1)
     }
 
     fun dup2x2() {
-        return insn(Opcodes.DUP2_X2)
+        insn(Opcodes.DUP2_X2)
     }
 
     fun swap() {
-        return insn(Opcodes.SWAP)
+        insn(Opcodes.SWAP)
     }
 
     fun iadd() {
-        return insn(Opcodes.IADD)
+        insn(Opcodes.IADD)
     }
 
     fun ladd() {
-        return insn(Opcodes.LADD)
+        insn(Opcodes.LADD)
     }
 
     fun fadd() {
-        return insn(Opcodes.FADD)
+        insn(Opcodes.FADD)
     }
 
     fun dadd() {
-        return insn(Opcodes.DADD)
+        insn(Opcodes.DADD)
     }
 
     fun isub() {
-        return insn(Opcodes.ISUB)
+        insn(Opcodes.ISUB)
     }
 
     fun lsub() {
-        return insn(Opcodes.LSUB)
+        insn(Opcodes.LSUB)
     }
 
     fun fsub() {
-        return insn(Opcodes.FSUB)
+        insn(Opcodes.FSUB)
     }
 
     fun dsub() {
-        return insn(Opcodes.DSUB)
+        insn(Opcodes.DSUB)
     }
 
     fun imul() {
-        return insn(Opcodes.IMUL)
+        insn(Opcodes.IMUL)
     }
 
     fun lmul() {
-        return insn(Opcodes.LMUL)
+        insn(Opcodes.LMUL)
     }
 
     fun fmul() {
-        return insn(Opcodes.FMUL)
+        insn(Opcodes.FMUL)
     }
 
     fun dmul() {
-        return insn(Opcodes.DMUL)
+        insn(Opcodes.DMUL)
     }
 
     fun idiv() {
-        return insn(Opcodes.IDIV)
+        insn(Opcodes.IDIV)
     }
 
     fun ldiv() {
-        return insn(Opcodes.LDIV)
+        insn(Opcodes.LDIV)
     }
 
     fun fdiv() {
-        return insn(Opcodes.FDIV)
+        insn(Opcodes.FDIV)
     }
 
     fun ddiv() {
-        return insn(Opcodes.DDIV)
+        insn(Opcodes.DDIV)
     }
 
     fun irem() {
-        return insn(Opcodes.IREM)
+        insn(Opcodes.IREM)
     }
 
     fun lrem() {
-        return insn(Opcodes.LREM)
+        insn(Opcodes.LREM)
     }
 
     fun frem() {
-        return insn(Opcodes.FREM)
+        insn(Opcodes.FREM)
     }
 
     fun drem() {
-        return insn(Opcodes.DREM)
+        insn(Opcodes.DREM)
     }
 
     fun ineg() {
-        return insn(Opcodes.INEG)
+        insn(Opcodes.INEG)
     }
 
     fun lneg() {
-        return insn(Opcodes.LNEG)
+        insn(Opcodes.LNEG)
     }
 
     fun fneg() {
-        return insn(Opcodes.FNEG)
+        insn(Opcodes.FNEG)
     }
 
     fun dneg() {
-        return insn(Opcodes.DNEG)
+        insn(Opcodes.DNEG)
     }
 
     fun ishl() {
-        return insn(Opcodes.ISHL)
+        insn(Opcodes.ISHL)
     }
 
     fun lshl() {
-        return insn(Opcodes.LSHL)
+        insn(Opcodes.LSHL)
     }
 
     fun ishr() {
-        return insn(Opcodes.ISHR)
+        insn(Opcodes.ISHR)
     }
 
     fun lshr() {
-        return insn(Opcodes.LSHR)
+        insn(Opcodes.LSHR)
     }
 
     fun iushr() {
-        return insn(Opcodes.IUSHR)
+        insn(Opcodes.IUSHR)
     }
 
     fun lushr() {
-        return insn(Opcodes.LUSHR)
+        insn(Opcodes.LUSHR)
     }
 
     fun iand() {
-        return insn(Opcodes.IAND)
+        insn(Opcodes.IAND)
     }
 
     fun land() {
-        return insn(Opcodes.LAND)
+        insn(Opcodes.LAND)
     }
 
     fun ior() {
-        return insn(Opcodes.IOR)
+        insn(Opcodes.IOR)
     }
 
     fun lor() {
-        return insn(Opcodes.LOR)
+        insn(Opcodes.LOR)
     }
 
     fun ixor() {
-        return insn(Opcodes.IXOR)
+        insn(Opcodes.IXOR)
     }
 
     fun lxor() {
-        return insn(Opcodes.LXOR)
+        insn(Opcodes.LXOR)
     }
 
     fun i2l() {
-        return insn(Opcodes.I2L)
+        insn(Opcodes.I2L)
     }
 
     fun i2f() {
-        return insn(Opcodes.I2F)
+        insn(Opcodes.I2F)
     }
 
     fun i2d() {
-        return insn(Opcodes.I2D)
+        insn(Opcodes.I2D)
     }
 
     fun l2i() {
-        return insn(Opcodes.L2I)
+        insn(Opcodes.L2I)
     }
 
     fun l2f() {
-        return insn(Opcodes.L2F)
+        insn(Opcodes.L2F)
     }
 
     fun l2d() {
-        return insn(Opcodes.L2D)
+        insn(Opcodes.L2D)
     }
 
     fun f2i() {
-        return insn(Opcodes.F2I)
+        insn(Opcodes.F2I)
     }
 
     fun f2l() {
-        return insn(Opcodes.F2L)
+        insn(Opcodes.F2L)
     }
 
     fun f2d() {
-        return insn(Opcodes.F2D)
+        insn(Opcodes.F2D)
     }
 
     fun d2i() {
-        return insn(Opcodes.D2I)
+        insn(Opcodes.D2I)
     }
 
     fun d2l() {
-        return insn(Opcodes.D2L)
+        insn(Opcodes.D2L)
     }
 
     fun d2f() {
-        return insn(Opcodes.D2F)
+        insn(Opcodes.D2F)
     }
 
     fun i2b() {
-        return insn(Opcodes.I2B)
+        insn(Opcodes.I2B)
     }
 
     fun i2c() {
-        return insn(Opcodes.I2C)
+        insn(Opcodes.I2C)
     }
 
     fun i2s() {
-        return insn(Opcodes.I2S)
+        insn(Opcodes.I2S)
     }
 
     fun lcmp() {
-        return insn(Opcodes.LCMP)
+        insn(Opcodes.LCMP)
     }
 
     fun fcmpl() {
-        return insn(Opcodes.FCMPL)
+        insn(Opcodes.FCMPL)
     }
 
     fun fcmpg() {
-        return insn(Opcodes.FCMPG)
+        insn(Opcodes.FCMPG)
     }
 
     fun dcmpl() {
-        return insn(Opcodes.DCMPL)
+        insn(Opcodes.DCMPL)
     }
 
     fun dcmpg() {
-        return insn(Opcodes.DCMPG)
+        insn(Opcodes.DCMPG)
+    }
+
+    fun xreturn(type: Type) {
+        when (type.sort) {
+            Type.VOID -> {
+                vreturn()
+            }
+            Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> {
+                ireturn()
+            }
+            Type.FLOAT -> {
+                freturn()
+            }
+            Type.LONG -> {
+                lreturn()
+            }
+            Type.DOUBLE -> {
+                dreturn()
+            }
+            Type.OBJECT, Type.ARRAY -> {
+                areturn()
+            }
+            else -> {
+                throw UnsupportedOperationException(type.toString())
+            }
+        }
     }
 
     fun ireturn() {
-        return insn(Opcodes.IRETURN)
+        insn(Opcodes.IRETURN)
     }
 
     fun lreturn() {
-        return insn(Opcodes.LRETURN)
+        insn(Opcodes.LRETURN)
     }
 
     fun freturn() {
-        return insn(Opcodes.FRETURN)
+        insn(Opcodes.FRETURN)
     }
 
     fun dreturn() {
-        return insn(Opcodes.DRETURN)
+        insn(Opcodes.DRETURN)
     }
 
     fun areturn() {
-        return insn(Opcodes.ARETURN)
+        insn(Opcodes.ARETURN)
     }
 
-    fun returnn() {
-        return insn(Opcodes.RETURN)
+    fun vreturn() {
+        insn(Opcodes.RETURN)
     }
 
     fun arraylength() {
-        return insn(Opcodes.ARRAYLENGTH)
+        insn(Opcodes.ARRAYLENGTH)
     }
 
     fun athrow() {
-        return insn(Opcodes.ATHROW)
+        insn(Opcodes.ATHROW)
     }
 
     fun monitorEnter() {
-        return insn(Opcodes.MONITORENTER)
+        insn(Opcodes.MONITORENTER)
     }
 
     fun monitorExit() {
-        return insn(Opcodes.MONITOREXIT)
+        insn(Opcodes.MONITOREXIT)
     }
 
     fun intInsn(opcode: Int, operand: Int) {
@@ -480,64 +584,109 @@ class InstructionBuilder {
     }
 
     fun bipush(operand: Int) {
-        return intInsn(Opcodes.BIPUSH, operand)
+        intInsn(Opcodes.BIPUSH, operand)
     }
 
     fun sipush(operand: Int) {
-        return intInsn(Opcodes.SIPUSH, operand)
+        intInsn(Opcodes.SIPUSH, operand)
     }
 
     fun newArray(type: Int) {
-        return intInsn(Opcodes.NEWARRAY, type)
+        intInsn(Opcodes.NEWARRAY, type)
     }
 
     fun varInsn(opcode: Int, index: Int) {
         list.add(VarInsnNode(opcode, index))
+    }
 
+    fun xload(type: Type, index: Int) {
+        when (type.sort) {
+            Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> {
+                iload(index)
+            }
+            Type.FLOAT -> {
+                fload(index)
+            }
+            Type.LONG -> {
+                lload(index)
+            }
+            Type.DOUBLE -> {
+                dload(index)
+            }
+            Type.OBJECT, Type.ARRAY -> {
+                aload(index)
+            }
+            else -> {
+                throw UnsupportedOperationException(type.toString())
+            }
+        }
     }
 
     fun iload(index: Int) {
-        return varInsn(Opcodes.ILOAD, index)
+        varInsn(Opcodes.ILOAD, index)
     }
 
     fun lload(index: Int) {
-        return varInsn(Opcodes.LLOAD, index)
+        varInsn(Opcodes.LLOAD, index)
     }
 
     fun fload(index: Int) {
-        return varInsn(Opcodes.FLOAD, index)
+        varInsn(Opcodes.FLOAD, index)
     }
 
     fun dload(index: Int) {
-        return varInsn(Opcodes.DLOAD, index)
+        varInsn(Opcodes.DLOAD, index)
     }
 
     fun aload(index: Int) {
-        return varInsn(Opcodes.ALOAD, index)
+        varInsn(Opcodes.ALOAD, index)
+    }
+
+    fun xstore(type: Type, index: Int) {
+        when (type.sort) {
+            Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> {
+                istore(index)
+            }
+            Type.FLOAT -> {
+                fstore(index)
+            }
+            Type.LONG -> {
+                lstore(index)
+            }
+            Type.DOUBLE -> {
+                dstore(index)
+            }
+            Type.OBJECT, Type.ARRAY -> {
+                astore(index)
+            }
+            else -> {
+                throw UnsupportedOperationException(type.toString())
+            }
+        }
     }
 
     fun istore(index: Int) {
-        return varInsn(Opcodes.ISTORE, index)
+        varInsn(Opcodes.ISTORE, index)
     }
 
     fun lstore(index: Int) {
-        return varInsn(Opcodes.LSTORE, index)
+        varInsn(Opcodes.LSTORE, index)
     }
 
     fun fstore(index: Int) {
-        return varInsn(Opcodes.FSTORE, index)
+        varInsn(Opcodes.FSTORE, index)
     }
 
     fun dstore(index: Int) {
-        return varInsn(Opcodes.DSTORE, index)
+        varInsn(Opcodes.DSTORE, index)
     }
 
     fun astore(index: Int) {
-        return varInsn(Opcodes.ASTORE, index)
+        varInsn(Opcodes.ASTORE, index)
     }
 
     fun ret(index: Int) {
-        return varInsn(Opcodes.RET, index)
+        varInsn(Opcodes.RET, index)
     }
 
     fun typeInsn(opcode: Int, desc: String) {
@@ -545,19 +694,19 @@ class InstructionBuilder {
     }
 
     fun anew(desc: String) {
-        return typeInsn(Opcodes.NEW, desc)
+        typeInsn(Opcodes.NEW, desc)
     }
 
     fun anewArray(desc: String) {
-        return typeInsn(Opcodes.ANEWARRAY, desc)
+        typeInsn(Opcodes.ANEWARRAY, desc)
     }
 
     fun checkCast(desc: String) {
-        return typeInsn(Opcodes.CHECKCAST, desc)
+        typeInsn(Opcodes.CHECKCAST, desc)
     }
 
     fun instanceOf(desc: String) {
-        return typeInsn(Opcodes.INSTANCEOF, desc)
+        typeInsn(Opcodes.INSTANCEOF, desc)
     }
 
     fun fieldInsn(opcode: Int, owner: String, name: String, desc: String) {
@@ -565,46 +714,48 @@ class InstructionBuilder {
     }
 
     fun getStatic(owner: String, name: String, desc: String) {
-        return fieldInsn(Opcodes.GETSTATIC, owner, name, desc)
+        fieldInsn(Opcodes.GETSTATIC, owner, name, desc)
     }
 
     fun putStatic(owner: String, name: String, desc: String) {
-        return fieldInsn(Opcodes.PUTSTATIC, owner, name, desc)
+        fieldInsn(Opcodes.PUTSTATIC, owner, name, desc)
     }
 
     fun getField(owner: String, name: String, desc: String) {
-        return fieldInsn(Opcodes.GETFIELD, owner, name, desc)
+        fieldInsn(Opcodes.GETFIELD, owner, name, desc)
     }
 
     fun putField(owner: String, name: String, desc: String) {
-        return fieldInsn(Opcodes.PUTFIELD, owner, name, desc)
+        fieldInsn(Opcodes.PUTFIELD, owner, name, desc)
     }
 
-    @JvmOverloads
     fun methodInsn(
         opcode: Int,
         owner: String,
         name: String,
         desc: String,
-        isInterface: Boolean = opcode == Opcodes.INVOKEINTERFACE
+        isInterface: Boolean
     ) {
         list.add(MethodInsnNode(opcode, owner, name, desc, isInterface))
     }
 
-    fun invokeVirtual(owner: String, name: String, desc: String) {
-        return methodInsn(Opcodes.INVOKEVIRTUAL, owner, name, desc, false)
+    @JvmOverloads
+    fun invokeVirtual(owner: String, name: String, desc: String, isInterface: Boolean = false) {
+        methodInsn(Opcodes.INVOKEVIRTUAL, owner, name, desc, isInterface)
     }
 
-    fun invokeSpecial(owner: String, name: String, desc: String) {
-        return methodInsn(Opcodes.INVOKESPECIAL, owner, name, desc, false)
+    @JvmOverloads
+    fun invokeSpecial(owner: String, name: String, desc: String, isInterface: Boolean = false) {
+        methodInsn(Opcodes.INVOKESPECIAL, owner, name, desc, isInterface)
     }
 
-    fun invokeStatic(owner: String, name: String, desc: String) {
-        return methodInsn(Opcodes.INVOKESTATIC, owner, name, desc, false)
+    @JvmOverloads
+    fun invokeStatic(owner: String, name: String, desc: String, isInterface: Boolean = false) {
+        methodInsn(Opcodes.INVOKESTATIC, owner, name, desc, isInterface)
     }
 
     fun invokeInterface(owner: String, name: String, desc: String) {
-        return methodInsn(Opcodes.INVOKEINTERFACE, owner, name, desc, true)
+        methodInsn(Opcodes.INVOKEINTERFACE, owner, name, desc, true)
     }
 
     fun invokeDynamic(name: String, desc: String, bsm: Handle, vararg bsmArgs: Any) {
@@ -616,75 +767,75 @@ class InstructionBuilder {
     }
 
     fun ifeq(label: LabelNode) {
-        return jumpInsn(Opcodes.IFEQ, label)
+        jumpInsn(Opcodes.IFEQ, label)
     }
 
     fun ifne(label: LabelNode) {
-        return jumpInsn(Opcodes.IFNE, label)
+        jumpInsn(Opcodes.IFNE, label)
     }
 
     fun iflt(label: LabelNode) {
-        return jumpInsn(Opcodes.IFLT, label)
+        jumpInsn(Opcodes.IFLT, label)
     }
 
     fun ifge(label: LabelNode) {
-        return jumpInsn(Opcodes.IFGE, label)
+        jumpInsn(Opcodes.IFGE, label)
     }
 
     fun ifgt(label: LabelNode) {
-        return jumpInsn(Opcodes.IFGT, label)
+        jumpInsn(Opcodes.IFGT, label)
     }
 
     fun ifle(label: LabelNode) {
-        return jumpInsn(Opcodes.IFLE, label)
+        jumpInsn(Opcodes.IFLE, label)
     }
 
     fun if_icmpeq(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ICMPEQ, label)
+        jumpInsn(Opcodes.IF_ICMPEQ, label)
     }
 
     fun if_icmpne(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ICMPNE, label)
+        jumpInsn(Opcodes.IF_ICMPNE, label)
     }
 
     fun if_icmplt(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ICMPLT, label)
+        jumpInsn(Opcodes.IF_ICMPLT, label)
     }
 
     fun if_icmpge(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ICMPGE, label)
+        jumpInsn(Opcodes.IF_ICMPGE, label)
     }
 
     fun if_icmpgt(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ICMPGT, label)
+        jumpInsn(Opcodes.IF_ICMPGT, label)
     }
 
     fun if_icmple(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ICMPLE, label)
+        jumpInsn(Opcodes.IF_ICMPLE, label)
     }
 
     fun if_acmpeq(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ACMPEQ, label)
+        jumpInsn(Opcodes.IF_ACMPEQ, label)
     }
 
     fun if_acmpne(label: LabelNode) {
-        return jumpInsn(Opcodes.IF_ACMPNE, label)
+        jumpInsn(Opcodes.IF_ACMPNE, label)
     }
 
     fun ifNull(label: LabelNode) {
-        return jumpInsn(Opcodes.IFNULL, label)
+        jumpInsn(Opcodes.IFNULL, label)
     }
 
     fun ifNonNull(label: LabelNode) {
-        return jumpInsn(Opcodes.IFNONNULL, label)
+        jumpInsn(Opcodes.IFNONNULL, label)
     }
 
     fun agoto(label: LabelNode) {
-        return jumpInsn(Opcodes.GOTO, label)
+        jumpInsn(Opcodes.GOTO, label)
     }
 
     fun jsr(label: LabelNode) {
-        return jumpInsn(Opcodes.JSR, label)
+        jumpInsn(Opcodes.JSR, label)
     }
 
     fun label(label: LabelNode) {
@@ -726,5 +877,9 @@ class InstructionBuilder {
 
     fun ainsn(insn: AbstractInsnNode) {
         list.add(insn)
+    }
+
+    fun alist(insnList: InsnList) {
+        list.add(insnList)
     }
 }

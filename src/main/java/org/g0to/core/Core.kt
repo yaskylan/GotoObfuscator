@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.BiConsumer
 import org.g0to.classloaders.ExtLoader
 import org.g0to.classloaders.GlobalClassManager
+import org.g0to.classloaders.SyntheticClasses
 import org.g0to.classloaders.TargetJar
 import org.g0to.conf.Configuration
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
@@ -37,6 +38,7 @@ class Core(
     val libraryClasses = ExclusionManager(ExclusionManager.ExcludeSetting(conf.libraryClasses, null, null))
     val targetJar = TargetJar(this)
     val extLoader = ExtLoader(this)
+    val syntheticClasses = SyntheticClasses(this)
     val globalClassManager = GlobalClassManager(this)
 
     fun init() {

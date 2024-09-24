@@ -1,16 +1,21 @@
 package org.g0to.test.target;
 
+import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
+
 public class Main {
+    @TestAnnotation
     public static void main(String[] args) {
         KotlinMain.INSTANCE.runKt();
 
-        System.out.println("Genshin impact");
-        System.out.println("你说得对, 但是原神后面忘了");
+        final String s1 = new Scanner(System.in).nextLine();
+        final String s2 = new Scanner(System.in).nextLine();
 
-        final GenericTest<KotlinMain.KotlinObject> genericTest = new GenericTest<>(new KotlinMain.KotlinObject());
-        System.out.println(genericTest.getValue());
-        genericTest.setValue(new KotlinMain.KotlinObject());
-        System.out.println(genericTest.getValue());
+        System.out.println(ThreadLocalRandom.current().nextLong() + s1);
+
+        final Test test = new Test();
+
+        System.out.println(test.test("test", 12, 877L));
     }
 
     public static class GenericTest<T> {
@@ -20,6 +25,7 @@ public class Main {
             this.value = value;
         }
 
+        @TestAnnotation(xxx = 222)
         public T getValue() {
             return value;
         }

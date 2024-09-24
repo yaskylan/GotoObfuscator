@@ -185,7 +185,7 @@ class InvokeProxy(
 
             setupArgument(proxyMethod, builder, desc)
             builder.ainsn(dest)
-            setupReturn(builder, desc)
+            builder.xreturn(Type.getReturnType(desc))
 
             proxyMethod.instructions.add(builder.build())
 
@@ -198,54 +198,13 @@ class InvokeProxy(
                                   desc: String) {
             var varIndex = 0
 
-            for (t in Type.getArgumentTypes(desc)) {
-                when (t.sort) {
-                    Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> {
-                        builder.iload(varIndex)
-                    }
-                    Type.FLOAT -> {
-                        builder.fload(varIndex)
-                    }
-                    Type.LONG -> {
-                        builder.lload(varIndex)
-                    }
-                    Type.DOUBLE -> {
-                        builder.dload(varIndex)
-                    }
-                    Type.ARRAY, Type.OBJECT -> {
-                        builder.aload(varIndex)
-                    }
-                }
+            for (type in Type.getArgumentTypes(desc)) {
+                builder.xload(type, varIndex)
 
-                varIndex += t.size
+                varIndex += type.size
             }
 
             method.maxLocals = varIndex
-        }
-
-        @JvmStatic
-        private fun setupReturn(builder: InstructionBuilder,
-                                desc: String) {
-            when (Type.getReturnType(desc).sort) {
-                Type.VOID -> {
-                    builder.returnn()
-                }
-                Type.BOOLEAN, Type.CHAR, Type.BYTE, Type.SHORT, Type.INT -> {
-                    builder.ireturn()
-                }
-                Type.FLOAT -> {
-                    builder.freturn()
-                }
-                Type.LONG -> {
-                    builder.lreturn()
-                }
-                Type.DOUBLE -> {
-                    builder.dreturn()
-                }
-                Type.ARRAY, Type.OBJECT -> {
-                    builder.areturn()
-                }
-            }
         }
 
         @JvmStatic

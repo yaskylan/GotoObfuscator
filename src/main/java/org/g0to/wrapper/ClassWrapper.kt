@@ -21,6 +21,7 @@ class ClassWrapper(
     fun getSuperName(): String? = classNode.superName
     fun getInterfaces(): List<String> = classNode.interfaces
     fun getMethods(): List<MethodNode> = classNode.methods
+    fun getFields(): List<FieldNode> = classNode.fields
 
     fun reloadClassNode(classNode: ClassNode) {
         this.classNode = classNode
@@ -31,11 +32,27 @@ class ClassWrapper(
     }
 
     fun addField(fieldNode: FieldNode) {
-        classNode.fields.add(fieldNode)
+        val fields = classNode.fields
+
+        fields.forEach {
+            if (it.name == fieldNode.name && it.name == fieldNode.desc) {
+                throw IllegalStateException("Duplicate field: ${it.name}${it.desc}")
+            }
+        }
+
+        fields.add(fieldNode)
     }
 
     fun addMethod(methodNode: MethodNode) {
-        classNode.methods.add(methodNode)
+        val methods = classNode.methods
+
+        methods.forEach {
+            if (it.name == methodNode.name && it.name == methodNode.desc) {
+                throw IllegalStateException("Duplicate method: ${it.name}${it.desc}")
+            }
+        }
+
+        methods.add(methodNode)
     }
 
     fun toByteArray(): ByteArray {

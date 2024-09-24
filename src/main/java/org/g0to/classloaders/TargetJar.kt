@@ -112,12 +112,20 @@ class TargetJar(private val core: Core) : ASMClassLoader {
                 jos.closeEntry()
             }
 
-            classes.forEach {
-                val entry = JarEntry(processFunc(JarProcessFunctionId.CLASS_NAME, it.value.classNode.name + ".class"))
+            fun putClass(classWrapper: ClassWrapper) {
+                val entry = JarEntry(processFunc(JarProcessFunctionId.CLASS_NAME, classWrapper.classNode.name + ".class"))
 
                 jos.putNextEntry(entry)
-                jos.write(it.value.toByteArray())
+                jos.write(classWrapper.toByteArray())
                 jos.closeEntry()
+            }
+
+            classes.forEach {
+                putClass(it.value)
+            }
+
+            core.syntheticClasses.classes.forEach {
+                putClass(it.value)
             }
 
             extractJars(jos)

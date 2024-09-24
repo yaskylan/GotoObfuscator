@@ -11,7 +11,8 @@ class GlobalClassManager(private val core: Core): ASMClassLoader {
     override fun getClassWrapper(name: String): ClassWrapper? {
         val sequences = arrayOf(
             core.targetJar,
-            core.extLoader
+            core.extLoader,
+            core.syntheticClasses
         )
 
         for (cloader in sequences) {

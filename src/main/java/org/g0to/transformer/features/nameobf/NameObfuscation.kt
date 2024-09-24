@@ -9,7 +9,6 @@ import org.g0to.dictionary.Dictionary
 import org.g0to.exclusion.ExclusionManager
 import org.g0to.transformer.Transformer
 import org.g0to.utils.TextWriter
-import org.g0to.utils.Utils
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.tree.ClassNode
 import java.io.IOException
@@ -140,8 +139,6 @@ class NameObfuscation(
 
             classStruct.mappedName =
                 outerStruct.getFinalName() + '$' + (if (StringUtils.isNumeric(innerName)) innerName else dictionary.randString())
-
-            Utils.breakpoint()
         }
     }
 
