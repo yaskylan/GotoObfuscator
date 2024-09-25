@@ -24,6 +24,8 @@ class NameObfuscation(
         val exclude: ExclusionManager.ExcludeSetting? = null,
         @SerializedName("mappingPath")
         val mappingPath: String = "mapping.txt",
+        @SerializedName("package")
+        val packageName: String = "",
         @SerializedName("renameClass")
         val renameClass: Boolean = true,
         @SerializedName("renameField")
@@ -40,8 +42,18 @@ class NameObfuscation(
 
     private val exclusionManager = ExclusionManager((setting as Setting).exclude)
     private val classTree = ClassTree()
+    private val packageName = run {
+        val settingPackage = (setting as Setting).packageName
+
+        if (settingPackage.isEmpty() || settingPackage.last() == '/') {
+            settingPackage
+        } else {
+            "$settingPackage/"
+        }
+    }
 
     override fun run(core: Core) {
+        logger.info("Package: $packageName")
         logger.info("Initializing class tree")
         classTree.init(core)
 
@@ -129,7 +141,7 @@ class NameObfuscation(
         val symbolIndex = rawName.indexOf('$')
 
         if (symbolIndex == -1) {
-            classStruct.mappedName = dictionary.randString()
+            classStruct.mappedName = packageName + dictionary.randString()
         } else {
             val outerName = rawName.substring(0, symbolIndex)
             val innerName = rawName.substring(symbolIndex + 1)
