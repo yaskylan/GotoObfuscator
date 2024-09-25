@@ -16,6 +16,7 @@ import java.util.jar.Manifest
 fun main() {
     writeTestJar()
     org.g0to.main(arrayOf("-c", "conf.json"))
+    //org.g0to.main(arrayOf("-c", "fulltest.json"))
 }
 
 fun writeTestJar() {

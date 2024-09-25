@@ -7,8 +7,11 @@ import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import java.io.Closeable
+import java.io.File
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.jar.JarFile
+import kotlin.io.path.walk
 
 class ExtLoader(private val core: Core) : Closeable, ASMClassLoader {
     companion object {
@@ -22,11 +25,22 @@ class ExtLoader(private val core: Core) : Closeable, ASMClassLoader {
     fun init() {
         if (core.conf.javaVersion > 8) {
             jrtLoader = JrtLoader(core)
+        } else {
+            for (dir in arrayOf("lib", "jre/lib")) {
+                Files.walk(Path.of(core.conf.jdkPath, dir))
+                    .filter { it.toString().endsWith(".jar") }
+                    .forEach { addJar(it) }
+            }
         }
     }
 
     fun addJar(path: Path) {
-        extFiles.add(JarFile(path.toFile()))
+        if (extFiles.none { it.toString() == path.toString() }) {
+            logger.trace("Adding library jar: {}", path)
+            extFiles.add(JarFile(path.toFile()))
+        } else {
+            logger.warn("Duplicate lib: {}", path.toString())
+        }
     }
 
     override fun getClassWrapper(name: String): ClassWrapper? {

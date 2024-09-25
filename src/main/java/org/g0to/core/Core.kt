@@ -56,11 +56,9 @@ class Core(
 
     private fun addLibrary(path: Path) {
         if (Files.isDirectory(path)) {
-            Files.list(path).forEach {
-                if (Files.isDirectory(it) || it.name.endsWith(".jar")) {
-                    addLibrary(it)
-                }
-            }
+            Files.walk(path)
+                .filter { it.toString().endsWith(".jar") }
+                .forEach { extLoader.addJar(it) }
         } else {
             extLoader.addJar(path)
         }
