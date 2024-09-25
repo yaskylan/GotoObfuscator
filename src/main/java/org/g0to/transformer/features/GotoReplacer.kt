@@ -33,6 +33,8 @@ class GotoReplacer(
                             randNumber = ThreadLocalRandom.current().nextInt()
                         }
 
+                        // TODO bug detected
+
                         val l1 = LabelNode()
                         val l2 = LabelNode()
                         val l3 = LabelNode()
