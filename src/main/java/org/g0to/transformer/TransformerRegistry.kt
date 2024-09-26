@@ -12,6 +12,7 @@ object TransformerRegistry {
         registry["StringEncryption"] = StringEncryption::class.java
         registry["NumberEncryption"] = NumberEncryption::class.java
         registry["NameObfuscation"] = NameObfuscation::class.java
+        registry["IndyTransformer"] = IndyTransformer::class.java
         registry["FlowObfuscation"] = FlowObfuscation::class.java
         registry["VariableRename"] = VariableRename::class.java
         registry["GotoReplacer"] = GotoReplacer::class.java

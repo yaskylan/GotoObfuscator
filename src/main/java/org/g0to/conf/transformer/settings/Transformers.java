@@ -18,6 +18,9 @@ public class Transformers {
     @SerializedName("InvokeProxy")
     public InvokeProxy.Setting invokeProxy;
 
+    @SerializedName("IndyTransformer")
+    public IndyTransformer.Setting indyTransformer;
+
     @SerializedName("FlowObfuscation")
     public FlowObfuscation.Setting flowObfuscation;
 
