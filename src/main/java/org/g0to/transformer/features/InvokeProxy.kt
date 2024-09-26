@@ -180,7 +180,7 @@ class InvokeProxy(
             val proxyMethod = MethodNode(ASMUtils.generateModifier(
                 Opcodes.ACC_PRIVATE,
                 Opcodes.ACC_STATIC
-            ), dictionary.randMethodName(desc), desc, null, null)
+            ), dictionary.randStaticMethodName(desc), desc, null, null)
             val builder = InstructionBuilder()
 
             setupArgument(proxyMethod, builder, desc)

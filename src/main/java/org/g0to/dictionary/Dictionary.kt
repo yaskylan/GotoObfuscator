@@ -61,18 +61,18 @@ open class Dictionary(
     protected fun randString(blackList: HashSet<String>): String {
         var s: String
 
-        if (usedList.size == expectedSize) {
-            length++
-            updateExpectedSize()
-            usedList.clear()
-        }
-
         do {
             do {
                 s = randString0()
             } while (usedList.contains(s))
 
             usedList.add(s)
+
+            if (usedList.size == expectedSize) {
+                length++
+                updateExpectedSize()
+                usedList.clear()
+            }
         } while (blackList.contains(s))
 
         return s

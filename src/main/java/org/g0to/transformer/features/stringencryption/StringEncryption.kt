@@ -141,7 +141,7 @@ class StringEncryption(
         val methodDescriptor = "(IIJ)Ljava/lang/String;"
         val methodBuilder = MethodBuilder(
             Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC,
-            classDictionary.randMethodName(methodDescriptor),
+            classDictionary.randStaticMethodName(methodDescriptor),
             methodDescriptor,
             null,
             null

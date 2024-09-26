@@ -8,26 +8,37 @@ class ClassDictionary(
     words: CharArray,
     length: Int
 ) : Dictionary(words, length) {
+    private val fieldBlackList = HashSet<String>()
+    private val methodBlackList = HashSet<String>()
+
     fun randFieldName(): String {
-        val blackList = HashSet<String>(this.blackList)
+        val blackList = HashSet.newHashSet<String>(this.blackList.size)
+        blackList.addAll(this.blackList)
+        blackList.addAll(this.fieldBlackList)
 
         for (field in classWrapper.classNode.fields) {
             blackList.add(field.name)
         }
 
-        return randString(blackList)
+        return randString(blackList).also {
+            this.fieldBlackList.add(it)
+        }
     }
 
-    fun randMethodName(desc: String): String {
-        val argumentTypeOfTargetMethod = Type.getArgumentTypes(desc)
-        val blackList = HashSet<String>(this.blackList)
+    fun randStaticMethodName(desc: String): String {
+        val argTypes = Type.getArgumentTypes(desc)
+        val blackList = HashSet.newHashSet<String>(this.blackList.size)
+        blackList.addAll(this.blackList)
+        blackList.addAll(this.methodBlackList)
 
         for (method in classWrapper.classNode.methods) {
-            if (Type.getArgumentTypes(method.desc).contentEquals(argumentTypeOfTargetMethod)) {
+            if (Type.getArgumentTypes(method.desc).contentEquals(argTypes)) {
                 blackList.add(method.name)
             }
         }
 
-        return randString(blackList)
+        return randString(blackList).also {
+            this.methodBlackList.add(it)
+        }
     }
 }
