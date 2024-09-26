@@ -6,6 +6,7 @@ import org.g0to.classloaders.ExtLoader
 import org.g0to.core.Core
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
@@ -31,11 +32,27 @@ class ClassWrapper(
         return Modifier.isInterface(classNode.access)
     }
 
+    fun allocMethodName(base: String, desc: String): String {
+        val methodNames = getMethods()
+            .filter { it.desc == desc }
+            .map { it.name }
+            .toHashSet()
+
+        var index = 0
+        var name: String
+
+        do {
+            name = base + (index++)
+        } while (methodNames.contains(name))
+
+        return name
+    }
+
     fun addField(fieldNode: FieldNode) {
         val fields = classNode.fields
 
         fields.forEach {
-            if (it.name == fieldNode.name && it.name == fieldNode.desc) {
+            if (it.name == fieldNode.name && it.desc == fieldNode.desc) {
                 throw IllegalStateException("Duplicate field: ${it.name}${it.desc}")
             }
         }
@@ -47,7 +64,7 @@ class ClassWrapper(
         val methods = classNode.methods
 
         methods.forEach {
-            if (it.name == methodNode.name && it.name == methodNode.desc) {
+            if (it.name == methodNode.name && Type.getArgumentTypes(it.desc).contentEquals(Type.getArgumentTypes(methodNode.desc))) {
                 throw IllegalStateException("Duplicate method: ${it.name}${it.desc}")
             }
         }
