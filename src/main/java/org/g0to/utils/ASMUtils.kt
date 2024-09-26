@@ -1,6 +1,7 @@
 package org.g0to.utils
 
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
 
 object ASMUtils {
@@ -74,5 +75,19 @@ object ASMUtils {
 
     fun toWrappedPrimaryType(desc: String): String? {
         return primitiveToWrapperMap[desc[0]]
+    }
+
+    fun newLabels(len: Int): Array<LabelNode> {
+        return Array(len) { LabelNode() }
+    }
+
+    fun getDescriptor(types: Array<Type>): String {
+        val builder = StringBuilder()
+
+        for (type in types) {
+            builder.append(type.descriptor)
+        }
+
+        return builder.toString()
     }
 }

@@ -66,7 +66,8 @@ fun processMakeConcatWithConstants(instance: StringEncryption,
     }
 
     val bootstrap = createIndyBootstrap(
-        classWrapper, "_goto_makeConcatWithConstants_" + plainTexts.size,
+        classWrapper,
+        "_goto_makeConcatWithConstants_" + plainTexts.size,
         Array(constantList.size) {
             val plaintext = constantList[it]
 

@@ -24,6 +24,8 @@ class NameObfuscation(
         val exclude: ExclusionManager.ExcludeSetting? = null,
         @SerializedName("mappingPath")
         val mappingPath: String = "mapping.txt",
+        @SerializedName("mappingType")
+        val mappingType: String = "Default",
         @SerializedName("package")
         val packageName: String = "",
         @SerializedName("renameClass")

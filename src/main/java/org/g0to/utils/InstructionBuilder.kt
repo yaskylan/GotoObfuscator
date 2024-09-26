@@ -4,6 +4,7 @@ import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
+import kotlin.math.max
 
 class InstructionBuilder {
     companion object {
@@ -855,8 +856,40 @@ class InstructionBuilder {
         list.add(IincInsnNode(varIndex, increment))
     }
 
+    fun tableSwitch(min: Int, max: Int, defaultCase: InstructionBuilder.() -> Unit, cases: InstructionBuilder.(Int) -> Unit) {
+        val caseLabels = ASMUtils.newLabels((max + 1) - min)
+        val defaultLabel = LabelNode()
+
+        tableSwitch(min, max, defaultLabel, *caseLabels)
+
+        caseLabels.withIndex().forEach { (index, label) ->
+            label(label)
+            cases(this, index)
+        }
+
+        label(defaultLabel) {
+            defaultCase(this)
+        }
+    }
+
     fun tableSwitch(min: Int, max: Int, defaultLabel: LabelNode, vararg labels: LabelNode) {
         list.add(TableSwitchInsnNode(min, max, defaultLabel, *labels))
+    }
+
+    fun lookupSwitch(keys: IntArray, defaultCase: InstructionBuilder.() -> Unit, cases: InstructionBuilder.(Int) -> Unit) {
+        val caseLabels = ASMUtils.newLabels(keys.size)
+        val defaultLabel = LabelNode()
+
+        lookupSwitch(defaultLabel, keys, caseLabels)
+
+        caseLabels.withIndex().forEach { (index, label) ->
+            label(label)
+            cases(this, index)
+        }
+
+        label(defaultLabel) {
+            defaultCase(this)
+        }
     }
 
     fun lookupSwitch(defaultLabel: LabelNode, keys: IntArray, labels: Array<LabelNode>) {
