@@ -1,5 +1,6 @@
 package org.g0to.transformer.features.nameobf
 
+import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.MethodNode
 import java.lang.reflect.Modifier
 
@@ -39,6 +40,7 @@ class MethodStruct(
     fun isPublic() = Modifier.isPublic(node.access)
     fun isProtected() = Modifier.isProtected(node.access)
     fun isPrivate() = Modifier.isPrivate(node.access)
+    fun isSynthetic() = (node.access and Opcodes.ACC_SYNTHETIC) != 0
 
     fun isEnumMethod(): Boolean {
         if (owner.isEnum() && isPublic() && isStatic()) {
@@ -49,6 +51,10 @@ class MethodStruct(
         }
 
         return false
+    }
+
+    fun isAnnotationValueMethod(): Boolean {
+        return owner.isAnnotation() && name() == "value"
     }
 
     fun id() = node.name + node.desc
@@ -69,7 +75,12 @@ class MethodStruct(
     }
 
     fun shouldRename(): Boolean {
-        return !isSpacial() && !isNative() && !isMain() && !isEnumMethod()
+        return !isSpacial()
+                && !isNative()
+                && !isSynthetic()
+                && !isMain()
+                && !isEnumMethod()
+                && !isAnnotationValueMethod()
     }
 
     override fun toString(): String {

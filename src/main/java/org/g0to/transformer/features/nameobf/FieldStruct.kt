@@ -1,5 +1,6 @@
 package org.g0to.transformer.features.nameobf
 
+import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.FieldNode
 import java.lang.reflect.Modifier
 
@@ -14,6 +15,7 @@ class FieldStruct(
     fun isPublic() = Modifier.isPublic(node.access)
     fun isProtected() = Modifier.isProtected(node.access)
     fun isPrivate() = Modifier.isPrivate(node.access)
+    fun isSynthetic() = (node.access and Opcodes.ACC_SYNTHETIC) != 0
 
     fun isEnumField(): Boolean {
         if (owner.isEnum() && isStatic() && isFinal()) {
@@ -46,7 +48,7 @@ class FieldStruct(
     }
 
     fun shouldRename(): Boolean {
-        return !isEnumField()
+        return !isSynthetic() && !isEnumField()
     }
 
     override fun toString(): String {

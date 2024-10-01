@@ -53,6 +53,8 @@ class ClassStruct(
         }
     }
 
+    fun isAnnotation() = (classWrapper.classNode.access and Opcodes.ACC_ANNOTATION) != 0
+
     fun shouldRename(setting: NameObfuscation.Setting): Boolean {
         return methods.values.none { it.isNative() || (!setting.renameMain && it.isMain()) }
     }

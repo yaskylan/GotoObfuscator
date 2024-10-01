@@ -22,8 +22,7 @@ class TreeRemapper(
             return name
         }
 
-        val mappedName = classStruct.searchField(name, descriptor)?.mappedName ?: return name
-        return mappedName
+        return classStruct.searchField(name, descriptor)?.mappedName ?: name
     }
 
     override fun mapMethodName(owner: String, name: String, descriptor: String): String {
