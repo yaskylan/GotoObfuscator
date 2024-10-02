@@ -16,7 +16,9 @@ class VariableRename(
             }
 
             for (localVariable in method.localVariables) {
-                localVariable.name = "v"
+                if (localVariable.name != "this") {
+                    localVariable.name = "v"
+                }
             }
         }
     }
