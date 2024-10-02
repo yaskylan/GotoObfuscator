@@ -253,7 +253,7 @@ class NameObfuscation(
             classStruct.classWrapper.classNode.accept(classRemapper)
             classStruct.classWrapper.reloadClassNode(newClassNode)
 
-            newClassNode.sourceFile = newClassNode.name + ".java"
+            newClassNode.sourceFile = newClassNode.name.split('/').last() + ".java"
 
             if (classStruct.hasMappedName()) {
                 (classStruct.classWrapper.classLoader as TargetJar).updateClassKey(oldName, classStruct.getFinalName())
