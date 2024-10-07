@@ -9,6 +9,7 @@ import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
 import org.g0to.utils.MethodBuilder
 import org.g0to.utils.Utils.nextNonZeroInt
+import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.InsnList
@@ -22,17 +23,19 @@ class StringEncryption(
 ) : Transformer<StringEncryption.Setting>("StringEncryption", setting as Setting) {
     class Setting : TransformerBaseSetting()
 
+    private val decryptMethodDesc = "(IIJ)Ljava/lang/String;"
+
     override fun run(core: Core) {
         var accumulated = 0
 
         core.foreachTargetClasses { classWrapper ->
             var shouldProcess = false
 
-            methodForeach@ for (method in classWrapper.getMethods()) {
+            foreachMethod@ for (method in classWrapper.getMethods()) {
                 for (instruction in method.instructions) {
                     if (ASMUtils.isString(instruction) || isMakeConcatWithConstants(instruction)) {
                         shouldProcess = true
-                        break@methodForeach
+                        break@foreachMethod
                     }
                 }
             }
@@ -44,55 +47,49 @@ class StringEncryption(
             val classDictionary = core.conf.dictionary.newClassDictionary(classWrapper)
             val keyOfClass = ThreadLocalRandom.current().nextInt(0xFFFFFF, Int.MAX_VALUE)
             val keyMap = IntArray(256) { ThreadLocalRandom.current().nextNonZeroInt() }
-            val storeField = FieldNode(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_FINAL, classDictionary.randFieldName(), "[Ljava/lang/String;", null, null)
-            val markField = FieldNode(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_FINAL, classDictionary.randFieldName(), "[B", null, null)
-            val decryptMethod = createDecryptMethod(keyOfClass, keyMap, classDictionary, classWrapper.getClassName(), storeField, markField)
+            val encryptedField = FieldNode(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_FINAL, classDictionary.randFieldName(), "[Ljava/lang/String;", null, null)
+            val decryptedField = FieldNode(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_FINAL, classDictionary.randFieldName(), "[Ljava/lang/String;", null, null)
+            val decryptMethod = createDecryptMethod(keyOfClass, keyMap, classDictionary, classWrapper.getClassName(), encryptedField, decryptedField)
             val indyConcatMethods = ArrayList<MethodNode>()
-            val plainTexts = ArrayList<PlainText>()
+            val plainTexts = LinkedHashMap<String, PlainText>()
 
-            for (field in classWrapper.getFields()) {
-                if (field.value is String) {
-                    ASMUtils.getClinit(classWrapper.classNode).instructions.insert(InstructionBuilder.buildInsnList {
-                        ldc(field.value)
-                        putStatic(classWrapper.getClassName(), field.name, field.desc)
-                    })
+            for (method in classWrapper.getMethods()) {
+                val buffer = InstructionBuffer(method)
 
-                    field.value = null
+                for (instruction in method.instructions) {
+                    if (isMakeConcatWithConstants(instruction)) {
+                        indyConcatMethods.add(processMakeConcatWithConstants(
+                            classWrapper,
+                            instruction as InvokeDynamicInsnNode,
+                            classDictionary.randStaticMethodName("(Ljava/lang/invoke/MethodHandles\$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;)Ljava/lang/invoke/CallSite;"),
+                            buffer
+                        ))
+                    }
                 }
+
+                buffer.apply()
+            }
+
+            indyConcatMethods.forEach {
+                classWrapper.addMethod(it)
             }
 
             for (methodNode in classWrapper.getMethods()) {
                 val buffer = InstructionBuffer(methodNode)
 
                 for (instruction in methodNode.instructions) {
-                    if (isMakeConcatWithConstants(instruction)) {
-                        val concatMethod = processMakeConcatWithConstants(
-                            this,
-                            classWrapper,
-                            instruction as InvokeDynamicInsnNode,
-                            buffer,
-                            plainTexts,
-                            keyOfClass,
-                            decryptMethod
-                        )
-
-                        indyConcatMethods.add(concatMethod)
-                        accumulated++
-
-                        continue
-                    }
-
                     if (!ASMUtils.isString(instruction)) {
                         continue
                     }
 
-                    val plainText = ASMUtils.getString(instruction)
-                    val key = generateKey()
+                    val plaintext = plainTexts.computeIfAbsent(ASMUtils.getString(instruction)) {
+                        PlainText(it, plainTexts.size, generateKey())
+                    }
 
                     buffer.replace(instruction, InstructionBuilder.buildInsnList {
-                        number((plainTexts.size xor keyOfClass) ushr 16)
-                        number((plainTexts.size xor keyOfClass) and  0xFFFF)
-                        number(getLong(key))
+                        number((plaintext.index xor keyOfClass) ushr 16)
+                        number((plaintext.index xor keyOfClass) and  0xFFFF)
+                        number(getLong(plaintext.key))
                         invokeStatic(
                             classWrapper.getClassName(),
                             decryptMethod.name,
@@ -101,20 +98,15 @@ class StringEncryption(
                         )
                     })
 
-                    plainTexts.add(PlainText(plainText, key))
                     accumulated++
                 }
 
                 buffer.apply()
             }
 
-            classWrapper.addField(storeField)
-            classWrapper.addField(markField)
+            classWrapper.addField(encryptedField)
+            classWrapper.addField(decryptedField)
             classWrapper.addMethod(decryptMethod)
-
-            indyConcatMethods.forEach {
-                classWrapper.addMethod(it)
-            }
 
             // Process clinit
             ASMUtils.getClinit(classWrapper.classNode)
@@ -123,9 +115,9 @@ class StringEncryption(
                     plainTexts,
                     keyOfClass,
                     keyMap,
-                    classWrapper.getClassName(),
-                    storeField,
-                    markField
+                    classWrapper,
+                    encryptedField,
+                    decryptedField
                 ))
         }
 
@@ -136,13 +128,12 @@ class StringEncryption(
                                     keyMap: IntArray,
                                     classDictionary: ClassDictionary,
                                     className: String,
-                                    storeField: FieldNode,
-                                    markField: FieldNode): MethodNode {
-        val methodDescriptor = "(IIJ)Ljava/lang/String;"
+                                    encryptedField: FieldNode,
+                                    decryptedField: FieldNode): MethodNode {
         val methodBuilder = MethodBuilder(
             Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC,
-            classDictionary.randStaticMethodName(methodDescriptor),
-            methodDescriptor,
+            classDictionary.randStaticMethodName(decryptMethodDesc),
+            decryptMethodDesc,
             null,
             null
         )
@@ -161,10 +152,12 @@ class StringEncryption(
         val varHigh = methodBuilder.allocVariable()
         val varLow = methodBuilder.allocVariable()
         val varKeyLong = methodBuilder.allocBigVariable()
+        // ===
+        val varDecryptedString = methodBuilder.allocVariable()
         val varKeyBytes = methodBuilder.allocVariable()
         val varKeyBytesI = methodBuilder.allocVariable()
         val varIndex = methodBuilder.allocVariable()
-        val varString = methodBuilder.allocVariable()
+        val varEncryptedString = methodBuilder.allocVariable()
         val varBuffer = methodBuilder.allocVariable()
         val varForI = methodBuilder.allocVariable()
         val varForJ = methodBuilder.allocVariable()
@@ -179,13 +172,17 @@ class StringEncryption(
             ior()
             number(keyOfClass)
             ixor()
+            dup()
             istore(varIndex)
-            // Push mark field to the stack to check the mark
-            getStatic(className, markField.name, markField.desc)
-            iload(varIndex)
-            baload()
-            // If mark value is not equal to 0 then we go directly to the returnLabel
-            ifne(returnLabel)
+
+            getStatic(className, decryptedField.name, decryptedField.desc)
+            swap()
+            aaload()
+            dup()
+            astore(varDecryptedString)
+            // If the value is not null then we go directly to the returnLabel
+            ifNonNull(returnLabel)
+
             // new byte[8] and store
             number(8)
             newArray(Opcodes.T_BYTE)
@@ -218,15 +215,15 @@ class StringEncryption(
 
         // get encrypted string and store
         insnBuilder.label(covertLong2ByteForeachJumpLabel) {
-            getStatic(className, storeField.name, storeField.desc)
+            getStatic(className, encryptedField.name, encryptedField.desc)
             iload(varIndex)
             aaload()
-            astore(varString)
+            astore(varEncryptedString)
         }
 
         // char[] buffer = new char[varString.length()];
         insnBuilder.block {
-            aload(varString)
+            aload(varEncryptedString)
             invokeVirtual("java/lang/String", "length", "()I")
             newArray(Opcodes.T_CHAR)
             astore(varBuffer)
@@ -243,7 +240,7 @@ class StringEncryption(
         insnBuilder.label(charArrayForeachLabel) {
             // for (; i < varString.length(); i++)
             iload(varForI)
-            aload(varString)
+            aload(varEncryptedString)
             invokeVirtual("java/lang/String", "length", "()I")
             if_icmpge(charArrayForeachJumpLabel)
             // if (j == 8) j = 0
@@ -280,7 +277,7 @@ class StringEncryption(
                 // Decrypt core
                 aload(varBuffer)
                 iload(varForI)
-                aload(varString)
+                aload(varEncryptedString)
                 iload(varForI)
                 invokeVirtual("java/lang/String", "charAt", "(I)C")
                 number(keyOfClass)
@@ -302,66 +299,61 @@ class StringEncryption(
         }
 
         insnBuilder.label(charArrayForeachJumpLabel) {
-            // Store decrypted string to storeField
-            getStatic(className, storeField.name, storeField.desc)
+            // Store decrypted string
+            getStatic(className, decryptedField.name, decryptedField.desc)
             iload(varIndex)
             anew("java/lang/String")
             dup()
             aload(varBuffer)
             invokeSpecial("java/lang/String", "<init>", "([C)V")
             invokeVirtual("java/lang/String", "intern", "()Ljava/lang/String;")
+            dup()
+            astore(varDecryptedString)
             aastore()
-            // Set mark to a non-zero value
-            getStatic(className, markField.name, markField.desc)
-            iload(varIndex)
-            number(66)
-            bastore()
         }
 
         insnBuilder.label(returnLabel) {
-            getStatic(className, storeField.name, storeField.desc)
-            iload(varIndex)
-            aaload()
+            aload(varDecryptedString)
             areturn()
         }
 
         return methodBuilder.build()
     }
 
-    private fun addInit(plainTexts: ArrayList<PlainText>,
+    private fun addInit(plainTexts: HashMap<String, PlainText>,
                         keyOfClass: Int,
                         keyMap: IntArray,
-                        className: String,
-                        storeField: FieldNode,
-                        markField: FieldNode): InsnList {
+                        classWrapper: ClassWrapper,
+                        encryptedField: FieldNode,
+                        decryptedField: FieldNode): InsnList {
         return InstructionBuilder.buildInsnList {
             label(LabelNode())
             number(plainTexts.size)
             anewArray("java/lang/String")
             dup()
 
-            for ((index, plaintext) in plainTexts.withIndex()) {
+            for ((index, plaintext) in plainTexts.values.withIndex()) {
                 number(index)
-                ldc(encryptString(plaintext, index, keyOfClass, keyMap))
+                ldc(encryptString(plaintext, keyOfClass, keyMap))
                 aastore()
 
-                if (index != plainTexts.lastIndex) {
+                if (index != plainTexts.size - 1) {
                     dup()
                 }
             }
-            putStatic(className, storeField.name, storeField.desc)
+            putStatic(classWrapper.getClassName(), encryptedField.name, encryptedField.desc)
 
             number(plainTexts.size)
-            newArray(Opcodes.T_BYTE)
-            putStatic(className, markField.name, markField.desc)
+            anewArray("java/lang/String")
+            putStatic(classWrapper.getClassName(), decryptedField.name, decryptedField.desc)
         }
     }
 
-    private fun encryptString(plaintext: PlainText, indexOfString: Int, keyOfClass: Int, keyMap: IntArray): String {
+    private fun encryptString(plaintext: PlainText, keyOfClass: Int, keyMap: IntArray): String {
         return CharArray(plaintext.value.length) {
             (plaintext.value[it].code
              xor keyOfClass
-             xor (keyMap[(it xor indexOfString xor keyOfClass) and 0xFF])
+             xor (keyMap[(it xor plaintext.index xor keyOfClass) and 0xFF])
             ).toChar()
         }.apply { blockXor(this, plaintext.key) }.concatToString()
     }
@@ -402,6 +394,7 @@ class StringEncryption(
 
     class PlainText(
         val value: String,
+        val index: Int,
         val key: ByteArray
     )
 }

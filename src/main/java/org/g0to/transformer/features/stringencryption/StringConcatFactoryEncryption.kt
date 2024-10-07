@@ -1,6 +1,5 @@
 package org.g0to.transformer.features.stringencryption
 
-import org.g0to.transformer.features.stringencryption.StringEncryption.PlainText
 import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
 import org.g0to.utils.MethodBuilder
@@ -17,21 +16,18 @@ fun isMakeConcatWithConstants(instruction: AbstractInsnNode): Boolean {
             && instruction.bsmArgs[0].toString().find { it != '\u0001' } != null
 }
 
-fun processMakeConcatWithConstants(instance: StringEncryption,
-                                           classWrapper: ClassWrapper,
-                                           instruction: InvokeDynamicInsnNode,
-                                           buffer: InstructionBuffer,
-                                           plainTexts: ArrayList<PlainText>,
-                                           keyOfClass: Int,
-                                           decryptMethod: MethodNode): MethodNode {
+fun processMakeConcatWithConstants(classWrapper: ClassWrapper,
+                                   instruction: InvokeDynamicInsnNode,
+                                   bootstrapName: String,
+                                   buffer: InstructionBuffer): MethodNode {
     val recipe = instruction.bsmArgs[0].toString()
     val accumulatedString = StringBuilder()
     val newRecipe = StringBuilder()
-    val constantList = ArrayList<PlainText>()
+    val constantList = ArrayList<String>()
 
     fun flushAccumulatedString() {
         if (accumulatedString.isNotEmpty()) {
-            constantList.add(PlainText(accumulatedString.toString(), instance.generateKey()))
+            constantList.add(accumulatedString.toString())
             accumulatedString.setLength(0)
 
             newRecipe.append('\u0002')
@@ -50,7 +46,7 @@ fun processMakeConcatWithConstants(instance: StringEncryption,
             '\u0002' -> {
                 flushAccumulatedString()
 
-                constantList.add(PlainText(instruction.bsmArgs[bsmArgIndex++].toString(), instance.generateKey()))
+                constantList.add(instruction.bsmArgs[bsmArgIndex++].toString())
                 newRecipe.append('\u0002')
             }
             else -> {
@@ -65,20 +61,7 @@ fun processMakeConcatWithConstants(instance: StringEncryption,
         throw IllegalStateException()
     }
 
-    val bootstrap = createIndyBootstrap(
-        classWrapper,
-        "_goto_makeConcatWithConstants_" + plainTexts.size,
-        Array(constantList.size) {
-            val plaintext = constantList[it]
-
-            Triple(
-                ((plainTexts.size + it) xor keyOfClass) ushr 16,
-                ((plainTexts.size + it) xor keyOfClass) and  0xFFFF,
-                instance.getLong(plaintext.key)
-            )
-        },
-        decryptMethod
-    )
+    val bootstrap = createIndyBootstrap(bootstrapName, constantList)
 
     buffer.replace(instruction, InstructionBuilder.buildInsnList {
         invokeDynamic(
@@ -95,15 +78,11 @@ fun processMakeConcatWithConstants(instance: StringEncryption,
         )
     })
 
-    plainTexts.addAll(constantList)
-
     return bootstrap
 }
 
-private fun createIndyBootstrap(classWrapper: ClassWrapper,
-                                name: String,
-                                dataArray: Array<Triple<Int, Int, Long>>,
-                                decryptMethod: MethodNode): MethodNode {
+private fun createIndyBootstrap(name: String,
+                                constantList: ArrayList<String>): MethodNode {
     val methodBuilder = MethodBuilder(
         Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
         name,
@@ -122,24 +101,16 @@ private fun createIndyBootstrap(classWrapper: ClassWrapper,
         aload(varName)
         aload(varType)
         aload(varRecipe)
-        number(dataArray.size)
+        number(constantList.size)
         anewArray("java/lang/Object")
         dup()
 
-        for ((index, data) in dataArray.withIndex()) {
+        for ((index, constant) in constantList.withIndex()) {
             number(index)
-            number(data.first)
-            number(data.second)
-            number(data.third)
-            invokeStatic(
-                classWrapper.getClassName(),
-                decryptMethod.name,
-                decryptMethod.desc,
-                classWrapper.isInterface()
-            )
+            ldc(constant)
             aastore()
 
-            if (index != dataArray.lastIndex) {
+            if (index != constantList.lastIndex) {
                 dup()
             }
         }
