@@ -13,10 +13,9 @@ import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
 
-fun main() {
+fun main(args: Array<String>) {
     writeTestJar()
-    org.g0to.main(arrayOf("-c", "conf.json"))
-    //org.g0to.main(arrayOf("-c", "fulltest.json"))
+    org.g0to.main(arrayOf("-c", args[0]))
 }
 
 fun writeTestJar() {
