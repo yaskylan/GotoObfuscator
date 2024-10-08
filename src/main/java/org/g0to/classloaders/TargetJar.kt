@@ -15,8 +15,6 @@ import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipException
-import kotlin.collections.ArrayList
-import kotlin.collections.HashSet
 import kotlin.io.path.name
 
 class TargetJar(private val core: Core) : ASMClassLoader {

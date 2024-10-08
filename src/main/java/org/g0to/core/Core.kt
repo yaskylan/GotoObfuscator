@@ -24,7 +24,6 @@ import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.function.Consumer
-import kotlin.io.path.name
 
 class Core(
     val conf: Configuration

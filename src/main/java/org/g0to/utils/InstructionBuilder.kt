@@ -4,7 +4,6 @@ import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
-import kotlin.math.max
 
 class InstructionBuilder {
     companion object {

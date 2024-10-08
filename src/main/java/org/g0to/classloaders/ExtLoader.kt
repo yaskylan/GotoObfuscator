@@ -7,11 +7,9 @@ import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import java.io.Closeable
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.jar.JarFile
-import kotlin.io.path.walk
 
 class ExtLoader(private val core: Core) : Closeable, ASMClassLoader {
     companion object {

@@ -11,11 +11,7 @@ import org.g0to.utils.MethodBuilder
 import org.g0to.utils.Utils.nextNonZeroInt
 import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.Opcodes
-import org.objectweb.asm.tree.FieldNode
-import org.objectweb.asm.tree.InsnList
-import org.objectweb.asm.tree.InvokeDynamicInsnNode
-import org.objectweb.asm.tree.LabelNode
-import org.objectweb.asm.tree.MethodNode
+import org.objectweb.asm.tree.*
 import java.util.concurrent.ThreadLocalRandom
 
 class StringEncryption(
