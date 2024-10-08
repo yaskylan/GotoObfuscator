@@ -29,4 +29,7 @@ public class Transformers {
 
     @SerializedName("NumberEncryption")
     public NumberEncryption.Setting numberEncryption;
+
+    @SerializedName("Debug")
+    public Debug.Setting debug;
 }

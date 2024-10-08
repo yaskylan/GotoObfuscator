@@ -254,6 +254,12 @@ class NameObfuscation(
             classStruct.classWrapper.reloadClassNode(newClassNode)
 
             newClassNode.sourceFile = newClassNode.name.split('/').last() + ".java"
+            newClassNode.visibleAnnotations?.removeIf {
+                it.desc == "Lkotlin/Metadata;"
+            }
+            newClassNode.invisibleAnnotations?.removeIf {
+                it.desc == "Lkotlin/jvm/internal/SourceDebugExtension;"
+            }
 
             if (classStruct.hasMappedName()) {
                 (classStruct.classWrapper.classLoader as TargetJar).updateClassKey(oldName, classStruct.getFinalName())

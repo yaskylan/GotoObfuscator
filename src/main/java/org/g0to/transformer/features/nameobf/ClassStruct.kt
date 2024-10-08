@@ -8,6 +8,8 @@ class ClassStruct(
     val superClass: ClassStruct?,
     val interfaces: ArrayList<ClassStruct>
 ) {
+    val isKotlin = classWrapper.classNode.visibleAnnotations?.find { it.desc == "Lkotlin/Metadata;" } != null
+    val rawName = classWrapper.getClassName()
     val subClasses = ArrayList<ClassStruct>()
     val fields = HashMap<String, FieldStruct>()
     val methods = HashMap<String, MethodStruct>()

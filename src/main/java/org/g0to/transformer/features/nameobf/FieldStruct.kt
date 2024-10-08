@@ -30,6 +30,19 @@ class FieldStruct(
         return false
     }
 
+    fun isKotlinField(): Boolean {
+        if (!owner.isKotlin) {
+            return false
+        }
+
+        // 0x19 == public static final
+        if (node.access == 0x19 && name() == "INSTANCE") {
+            return true
+        }
+
+        return false
+    }
+
     fun id() = node.name + node.desc
     fun name() = node.name
     fun desc() = node.desc
@@ -48,7 +61,7 @@ class FieldStruct(
     }
 
     fun shouldRename(): Boolean {
-        return !isSynthetic() && !isEnumField()
+        return !isSynthetic() && !isEnumField() && !isKotlinField()
     }
 
     override fun toString(): String {

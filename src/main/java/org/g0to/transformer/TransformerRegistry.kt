@@ -17,6 +17,7 @@ object TransformerRegistry {
         registry["VariableRename"] = VariableRename::class.java
         registry["GotoReplacer"] = GotoReplacer::class.java
         registry["InvokeProxy"] = InvokeProxy::class.java
+        registry["Debug"] = Debug::class.java
     }
 
     fun newTransformerByName(name: String, setting: TransformerBaseSetting): Transformer<*>? {
