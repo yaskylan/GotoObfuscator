@@ -47,17 +47,19 @@ fun writeTestJar() {
         // Transfer jetbrains_annotation.jar
         transfer(Path.of(org.jetbrains.annotations.Nullable::class.java.protectionDomain.codeSource.location.toURI()), jos)
 
-        val basePath = "/org/g0to/test/target"
+        fun transferDirectory(path: String) {
+            getResourceAsStream(path).use {
+                for (name in IOUtils.readLines(it, StandardCharsets.UTF_8)) {
+                    val absolutePath = "$path/$name"
 
-        getResourceAsStream(basePath).use {
-            for (name in IOUtils.readLines(it, StandardCharsets.UTF_8)) {
-                val absolutePath = "$basePath/$name"
-                val classStream = requireNotNull(getResourceAsStream(absolutePath))
-
-                jos.putNextEntry(JarEntry(absolutePath.substring(1)))
-                classStream.transferTo(jos)
-                jos.closeEntry()
+                    jos.putNextEntry(JarEntry(absolutePath.substring(1)))
+                    getResourceAsStream(absolutePath)!!.use { classStream -> classStream.transferTo(jos) }
+                    jos.closeEntry()
+                }
             }
         }
+
+        transferDirectory("/org/g0to/test/target")
+        transferDirectory("/org/g0to/test/target/nameobftest")
     }
 }
