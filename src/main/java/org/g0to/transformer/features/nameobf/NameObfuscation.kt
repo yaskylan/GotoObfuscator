@@ -65,8 +65,6 @@ class NameObfuscation(
     }
 
     private fun rename(core: Core) {
-        logger.info("Picking name")
-
         val classDictionary = core.conf.dictionary.newDictionary()
         val fieldDictionary = core.conf.dictionary.newDictionary()
         val methodDictionary = core.conf.dictionary.newDictionary()
@@ -90,6 +88,10 @@ class NameObfuscation(
                         continue
                     }
 
+                    if (method.isStatic() || method.isPrivate()) {
+                        continue
+                    }
+
                     executor.execute {
                         logger.trace("[Multithreading] Build relative methods map for {}", method.owner.getClassName() + "." + method.name() + method.desc())
 
@@ -110,6 +112,7 @@ class NameObfuscation(
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
         }
 
+        logger.info("Picking name")
         for (classStruct in classTree.classes.values) {
             if (classStruct.isExternal()
                 || classStruct.isModule()) {
@@ -171,7 +174,7 @@ class NameObfuscation(
             return
         }
 
-        if (method.isStatic()) {
+        if (method.isStatic() || method.isPrivate()) {
             method.mappedName = dictionary.randString()
             return
         }
