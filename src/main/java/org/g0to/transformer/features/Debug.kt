@@ -6,12 +6,14 @@ import org.g0to.transformer.Transformer
 import org.g0to.transformer.features.nameobf.ClassTree
 import org.g0to.transformer.features.nameobf.NameObfuscation
 import org.g0to.transformer.features.nameobf.TreeRemapper
+import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.InsnNode
 import org.objectweb.asm.tree.LabelNode
+import org.objectweb.asm.tree.LineNumberNode
 import org.objectweb.asm.tree.MethodNode
 import java.lang.reflect.Modifier
 
@@ -39,7 +41,9 @@ class Debug(
                     continue
                 }
 
-                mt.instructions.insert(InstructionBuilder.buildInsnList {
+                val buffer = InstructionBuffer(mt)
+
+                buffer.insertFirst(InstructionBuilder.buildInsnList {
                     if (classTree == null) {
                         ldc(cw.getClassName() + "." + mt.name + mt.desc)
                         invokeStatic("GotoDebug", "___MARK___", "(Ljava/lang/String;)V")
@@ -82,6 +86,17 @@ class Debug(
                         }
                     }
                 })
+
+                for (instruction in mt.instructions) {
+                    if (instruction is LineNumberNode) {
+                        buffer.insert(instruction, InstructionBuilder.buildInsnList {
+                            ldc("Line " + instruction.line)
+                            invokeStatic("GotoDebug", "___MARK___", "(Ljava/lang/String;)V")
+                        })
+                    }
+                }
+
+                buffer.apply()
             }
         }
 
