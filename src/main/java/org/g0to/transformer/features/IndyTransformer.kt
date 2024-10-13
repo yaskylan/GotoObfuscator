@@ -4,8 +4,8 @@ import com.google.gson.annotations.SerializedName
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
 import org.g0to.core.Core
 import org.g0to.transformer.Transformer
-import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.MethodBuilder
+import org.g0to.utils.extensions.modify
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
@@ -52,36 +52,38 @@ class IndyTransformer(
             val bootstrapName = classWrapper.allocMethodName(setting.bootstrapName, bootstrapDesc)
             val invokeMap = LinkedHashMap<String, InvokeData>()
 
-            classWrapper.getMethods().forEach { method ->
-                val buffer = InstructionBuffer(method)
-
+            classWrapper.getMethods().forEach { method -> method.modify { buffer ->
                 fun processMethodInstruction(instruction: MethodInsnNode) {
                     if (instruction.opcode == Opcodes.INVOKESPECIAL
-                        || instruction.opcode == Opcodes.INVOKEINTERFACE) {
+                        || instruction.opcode == Opcodes.INVOKEINTERFACE
+                    ) {
                         return
                     }
 
                     val descriptor = if (instruction.opcode == Opcodes.INVOKESTATIC) {
                         instruction.desc
                     } else {
-                        StringBuilder(instruction.desc).insert(1, Type.getObjectType(instruction.owner).descriptor).toString()
+                        StringBuilder(instruction.desc).insert(1, Type.getObjectType(instruction.owner).descriptor)
+                            .toString()
                     }
                     val invokeData = invokeMap.computeIfAbsent(instruction.owner + '.' + instruction.name) {
                         InvokeData(invokeMap.size, instruction.owner, instruction.name)
                     }
 
-                    buffer.replace(instruction, InvokeDynamicInsnNode(
-                        "a",
-                        descriptor,
-                        Handle(
-                            Opcodes.H_INVOKESTATIC,
-                            classWrapper.getClassName(),
-                            bootstrapName,
-                            bootstrapDesc,
-                            classWrapper.isInterface()
-                        ),
-                        (invokeData.index.toLong() shl 32) or invokeTypeMap[instruction.opcode]!!.toLong()
-                    ))
+                    buffer.replace(
+                        instruction, InvokeDynamicInsnNode(
+                            "a",
+                            descriptor,
+                            Handle(
+                                Opcodes.H_INVOKESTATIC,
+                                classWrapper.getClassName(),
+                                bootstrapName,
+                                bootstrapDesc,
+                                classWrapper.isInterface()
+                            ),
+                            (invokeData.index.toLong() shl 32) or invokeTypeMap[instruction.opcode]!!.toLong()
+                        )
+                    )
 
                     accumulatedInvoke++
                 }
@@ -93,15 +95,15 @@ class IndyTransformer(
                         }
                     }
                 }
-
-                buffer.apply()
-            }
+            }}
 
             if (invokeMap.isNotEmpty()) {
-                classWrapper.addMethod(createBootstrap(
-                    bootstrapName,
-                    ArrayList(invokeMap.sequencedValues())
-                ))
+                classWrapper.addMethod(
+                    createBootstrap(
+                        bootstrapName,
+                        ArrayList(invokeMap.sequencedValues())
+                    )
+                )
             }
         }
 
@@ -110,37 +112,35 @@ class IndyTransformer(
 
     private fun createBootstrap(bootstrapName: String,
                                 invokeList: ArrayList<InvokeData>): MethodNode {
-        val bootstrapMethod = MethodBuilder(
-            Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
-            bootstrapName,
-            bootstrapDesc,
-            null,
-            null
-        )
+        val bootstrapMethod = MethodBuilder().visit {
+            access = Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC
+            name = bootstrapName
+            desc = bootstrapDesc
+        }
 
-        val varCaller = bootstrapMethod.allocVariable()
-        bootstrapMethod.allocVariable()
-        val varMethodType = bootstrapMethod.allocVariable()
-        val varData = bootstrapMethod.allocBigVariable()
-        val varOwner = bootstrapMethod.allocVariable()
-        val varName = bootstrapMethod.allocVariable()
-        val varRefc = bootstrapMethod.allocVariable()
-        val varMethodHandle = bootstrapMethod.allocVariable()
+        val varCaller = bootstrapMethod.allocSlot()
+        bootstrapMethod.allocSlot()
+        val varMethodType = bootstrapMethod.allocSlot()
+        val varData = bootstrapMethod.allocSlot64()
+        val varOwner = bootstrapMethod.allocSlot()
+        val varName = bootstrapMethod.allocSlot()
+        val varRefc = bootstrapMethod.allocSlot()
+        val varMethodHandle = bootstrapMethod.allocSlot()
 
         val labelSwitchIndexJump = LabelNode()
         val labelSwitchInvokeTypeJump = LabelNode()
 
-        bootstrapMethod.getInstructionBuilder().block {
+        bootstrapMethod.instructions {
             label(LabelNode())
 
             lload(varData)
             number(32)
             lushr()
             l2i()
-            tableSwitch(0, invokeList.size - 1, {
+            tableswitch(0, invokeList.size - 1, {
                 anew("java/lang/IllegalStateException")
                 dup()
-                invokeSpecial("java/lang/IllegalStateException", "<init>", "()V")
+                invokespecial("java/lang/IllegalStateException", "<init>", "()V")
                 athrow()
             }) { index ->
                 val invokeData = invokeList[index]
@@ -155,17 +155,17 @@ class IndyTransformer(
             label(labelSwitchIndexJump)
             aload(varCaller)
             aload(varOwner)
-            invokeVirtual("java/lang/invoke/MethodHandles\$Lookup", "findClass", "(Ljava/lang/String;)Ljava/lang/Class;")
+            invokevirtual("java/lang/invoke/MethodHandles\$Lookup", "findClass", "(Ljava/lang/String;)Ljava/lang/Class;")
             astore(varRefc)
 
             lload(varData)
             number(0xFFFFFFFFL)
             land()
             l2i()
-            tableSwitch(0x1FFFFFF2, 0x1FFFFFF3, {
+            tableswitch(0x1FFFFFF2, 0x1FFFFFF3, {
                 anew("java/lang/IllegalStateException")
                 dup()
-                invokeSpecial("java/lang/IllegalStateException", "<init>", "()V")
+                invokespecial("java/lang/IllegalStateException", "<init>", "()V")
                 athrow()
             }) { index ->
                 aload(varCaller)
@@ -175,15 +175,15 @@ class IndyTransformer(
                     0 -> {
                         aload(varName)
                         aload(varMethodType)
-                        invokeVirtual("java/lang/invoke/MethodHandles\$Lookup", "findStatic", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;")
+                        invokevirtual("java/lang/invoke/MethodHandles\$Lookup", "findStatic", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;")
                     }
                     1 -> {
                         aload(varName)
                         aload(varMethodType)
                         number(0)
                         number(1)
-                        invokeVirtual("java/lang/invoke/MethodType", "dropParameterTypes", "(II)Ljava/lang/invoke/MethodType;")
-                        invokeVirtual("java/lang/invoke/MethodHandles\$Lookup", "findVirtual", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;")
+                        invokevirtual("java/lang/invoke/MethodType", "dropParameterTypes", "(II)Ljava/lang/invoke/MethodType;")
+                        invokevirtual("java/lang/invoke/MethodHandles\$Lookup", "findVirtual", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;")
                     }
                 }
 
@@ -195,7 +195,7 @@ class IndyTransformer(
             anew("java/lang/invoke/ConstantCallSite")
             dup()
             aload(varMethodHandle)
-            invokeSpecial("java/lang/invoke/ConstantCallSite", "<init>", "(Ljava/lang/invoke/MethodHandle;)V")
+            invokespecial("java/lang/invoke/ConstantCallSite", "<init>", "(Ljava/lang/invoke/MethodHandle;)V")
             areturn()
         }
 

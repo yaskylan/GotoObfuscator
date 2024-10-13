@@ -2,29 +2,35 @@ package org.g0to.utils
 
 import org.objectweb.asm.tree.MethodNode
 
-class MethodBuilder(
-    access: Int,
-    name: String,
-    desc: String,
-    signature: String?,
-    exceptions: Array<String>?
-) {
-    private val method = MethodNode(access, name, desc, signature, exceptions)
+class MethodBuilder {
+    private val method = MethodNode()
     private val instructionBuilder = InstructionBuilder()
 
-    fun allocVariable(): Int {
+    init {
+        method.tryCatchBlocks = ArrayList()
+    }
+
+    fun visit(block: MethodNode.() -> Unit): MethodBuilder {
+        method.block()
+
+        return this
+    }
+
+    fun allocSlot(): Int {
         return method.maxLocals++
     }
 
-    fun allocBigVariable(): Int {
+    fun allocSlot64(): Int {
         val index = method.maxLocals
 
         method.maxLocals += 2
         return index
     }
 
-    fun getInstructionBuilder(): InstructionBuilder {
-        return instructionBuilder
+    fun instructions(block: InstructionBuilder.() -> Unit): MethodBuilder {
+        block(instructionBuilder)
+
+        return this
     }
 
     fun build(): MethodNode {

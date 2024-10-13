@@ -9,6 +9,7 @@ import org.g0to.dictionary.Dictionary
 import org.g0to.exclusion.ExclusionManager
 import org.g0to.transformer.Transformer
 import org.g0to.utils.TextWriter
+import org.g0to.utils.extensions.reversedFilteredForeach
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.tree.ClassNode
 import java.io.IOException
@@ -76,22 +77,15 @@ class NameObfuscation(
 
             val executor = Executors.newFixedThreadPool(setting.threadPoolSize)
 
-            for (classStruct in classTree.classes.values) {
-                if (classStruct.isExternal()
-                    || classStruct.isModule()) {
-                    continue
-                }
-
-                for (method in classStruct.getMethods()) {
-                    if (!method.shouldRename()
-                        || exclusionManager.isExcludedMethod(method.owner.getClassName(), method.name(), method.desc())) {
-                        continue
-                    }
-
-                    if (method.isStatic() || method.isPrivate()) {
-                        continue
-                    }
-
+            classTree.classes.values.reversedFilteredForeach({
+                it.isExternal() || it.isModule()
+            }) { classStruct ->
+                classStruct.getMethods().reversedFilteredForeach({
+                    !it.shouldRename()
+                    || exclusionManager.isExcludedMethod(it.owner.getClassName(), it.name(), it.desc())
+                    || it.isStatic()
+                    || it.isPrivate()
+                }) { method ->
                     executor.execute {
                         logger.trace("[Multithreading] Build relative methods map for {}", method.owner.getClassName() + "." + method.name() + method.desc())
 
@@ -113,12 +107,7 @@ class NameObfuscation(
         }
 
         logger.info("Picking name")
-        for (classStruct in classTree.classes.values) {
-            if (classStruct.isExternal()
-                || classStruct.isModule()) {
-                continue
-            }
-
+        classTree.classes.values.reversedFilteredForeach({ it.isExternal() || it.isModule() }) { classStruct ->
             if (setting.renameClass) {
                 renameClass(classStruct, classDictionary)
             }

@@ -3,8 +3,8 @@ package org.g0to.transformer.features
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
 import org.g0to.core.Core
 import org.g0to.transformer.Transformer
-import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
+import org.g0to.utils.extensions.modify
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
@@ -17,9 +17,7 @@ class GotoReplacer(
     override fun run(core: Core) {
         var accumulated = 0
 
-        core.foreachTargetMethods { _, methodNode ->
-            val buffer = InstructionBuffer(methodNode)
-
+        core.foreachTargetMethods { _, methodNode -> methodNode.modify { buffer ->
             for (instruction in methodNode.instructions) {
                 if (instruction.opcode == Opcodes.GOTO) {
                     instruction as JumpInsnNode
@@ -28,7 +26,7 @@ class GotoReplacer(
                         number(0)
                         ifeq(instruction.label)
                         label(LabelNode()) {
-                            aconstNull()
+                            aconst_null()
                             athrow()
                         }
                     })
@@ -36,9 +34,7 @@ class GotoReplacer(
                     accumulated++
                 }
             }
-
-            buffer.apply()
-        }
+        } }
 
         logger.info("Replaced $accumulated GOTO instructions")
     }

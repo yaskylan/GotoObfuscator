@@ -5,10 +5,10 @@ import org.g0to.core.Core
 import org.g0to.dictionary.ClassDictionary
 import org.g0to.transformer.Transformer
 import org.g0to.utils.ASMUtils
-import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
 import org.g0to.utils.MethodBuilder
 import org.g0to.utils.Utils.nextNonZeroInt
+import org.g0to.utils.extensions.modify
 import org.g0to.wrapper.ClassWrapper
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.*
@@ -49,9 +49,7 @@ class StringEncryption(
             val indyConcatMethods = ArrayList<MethodNode>()
             val plainTexts = LinkedHashMap<String, PlainText>()
 
-            for (method in classWrapper.getMethods()) {
-                val buffer = InstructionBuffer(method)
-
+            classWrapper.getMethods().forEach { method -> method.modify { buffer ->
                 for (instruction in method.instructions) {
                     if (isMakeConcatWithConstants(instruction)) {
                         indyConcatMethods.add(processMakeConcatWithConstants(
@@ -62,18 +60,14 @@ class StringEncryption(
                         ))
                     }
                 }
-
-                buffer.apply()
-            }
+            } }
 
             indyConcatMethods.forEach {
                 classWrapper.addMethod(it)
             }
 
-            for (methodNode in classWrapper.getMethods()) {
-                val buffer = InstructionBuffer(methodNode)
-
-                for (instruction in methodNode.instructions) {
+            classWrapper.getMethods().forEach { method -> method.modify { buffer ->
+                for (instruction in method.instructions) {
                     if (!ASMUtils.isString(instruction)) {
                         continue
                     }
@@ -86,7 +80,7 @@ class StringEncryption(
                         number((plaintext.index xor keyOfClass) ushr 16)
                         number((plaintext.index xor keyOfClass) and  0xFFFF)
                         number(getLong(plaintext.key))
-                        invokeStatic(
+                        invokestatic(
                             classWrapper.getClassName(),
                             decryptMethod.name,
                             decryptMethod.desc,
@@ -96,9 +90,7 @@ class StringEncryption(
 
                     accumulated++
                 }
-
-                buffer.apply()
-            }
+            } }
 
             classWrapper.addField(encryptedField)
             classWrapper.addField(decryptedField)
@@ -126,14 +118,12 @@ class StringEncryption(
                                     className: String,
                                     encryptedField: FieldNode,
                                     decryptedField: FieldNode): MethodNode {
-        val methodBuilder = MethodBuilder(
-            Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC,
-            classDictionary.randStaticMethodName(decryptMethodDesc),
-            decryptMethodDesc,
-            null,
-            null
-        )
-        val insnBuilder = methodBuilder.getInstructionBuilder()
+        val methodBuilder = MethodBuilder().visit {
+            access = Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC
+            name = classDictionary.randStaticMethodName(decryptMethodDesc)
+            desc = decryptMethodDesc
+        }
+
         val startLabel = LabelNode()
         val covertLong2ByteForeachLabel = LabelNode()
         val covertLong2ByteForeachJumpLabel = LabelNode()
@@ -145,172 +135,170 @@ class StringEncryption(
         val switchLabels = Array(256) { LabelNode() }
 
         // Variables
-        val varHigh = methodBuilder.allocVariable()
-        val varLow = methodBuilder.allocVariable()
-        val varKeyLong = methodBuilder.allocBigVariable()
+        val varHigh = methodBuilder.allocSlot()
+        val varLow = methodBuilder.allocSlot()
+        val varKeyLong = methodBuilder.allocSlot64()
         // ===
-        val varDecryptedString = methodBuilder.allocVariable()
-        val varKeyBytes = methodBuilder.allocVariable()
-        val varKeyBytesI = methodBuilder.allocVariable()
-        val varIndex = methodBuilder.allocVariable()
-        val varEncryptedString = methodBuilder.allocVariable()
-        val varBuffer = methodBuilder.allocVariable()
-        val varForI = methodBuilder.allocVariable()
-        val varForJ = methodBuilder.allocVariable()
-        val varXorKey = methodBuilder.allocVariable()
+        val varDecryptedString = methodBuilder.allocSlot()
+        val varKeyBytes = methodBuilder.allocSlot()
+        val varKeyBytesI = methodBuilder.allocSlot()
+        val varIndex = methodBuilder.allocSlot()
+        val varEncryptedString = methodBuilder.allocSlot()
+        val varBuffer = methodBuilder.allocSlot()
+        val varForI = methodBuilder.allocSlot()
+        val varForJ = methodBuilder.allocSlot()
+        val varXorKey = methodBuilder.allocSlot()
 
-        insnBuilder.label(startLabel) {
-            // Decrypt index
-            iload(varHigh)
-            number(16)
-            ishl()
-            iload(varLow)
-            ior()
-            number(keyOfClass)
-            ixor()
-            dup()
-            istore(varIndex)
+        methodBuilder.instructions {
+            label(startLabel) {
+                // Decrypt index
+                iload(varHigh)
+                number(16)
+                ishl()
+                iload(varLow)
+                ior()
+                number(keyOfClass)
+                ixor()
+                dup()
+                istore(varIndex)
 
-            getStatic(className, decryptedField.name, decryptedField.desc)
-            swap()
-            aaload()
-            dup()
-            astore(varDecryptedString)
-            // If the value is not null then we go directly to the returnLabel
-            ifNonNull(returnLabel)
+                getstatic(className, decryptedField.name, decryptedField.desc)
+                swap()
+                aaload()
+                dup()
+                astore(varDecryptedString)
+                // If the value is not null then we go directly to the returnLabel
+                ifNonNull(returnLabel)
 
-            // new byte[8] and store
-            number(8)
-            newArray(Opcodes.T_BYTE)
-            astore(varKeyBytes)
-            // int i = 0;
-            number(0)
-            istore(varKeyBytesI)
-        }
+                // new byte[8] and store
+                number(8)
+                newArray(Opcodes.T_BYTE)
+                astore(varKeyBytes)
+                // int i = 0;
+                number(0)
+                istore(varKeyBytesI)
+            }
 
-        // covert long to byte[]
-        insnBuilder.label(covertLong2ByteForeachLabel) {
-            iload(varKeyBytesI)
-            number(8)
-            if_icmpge(covertLong2ByteForeachJumpLabel)
-            aload(varKeyBytes)
-            iload(varKeyBytesI)
-            lload(varKeyLong)
-            number(64)
-            iinc(varKeyBytesI, 1)
-            iload(varKeyBytesI)
-            number(8)
-            imul()
-            isub()
-            lushr()
-            l2i()
-            i2b()
-            bastore()
-            agoto(covertLong2ByteForeachLabel)
-        }
+            // covert long to byte[]
+            label(covertLong2ByteForeachLabel) {
+                iload(varKeyBytesI)
+                number(8)
+                if_icmpge(covertLong2ByteForeachJumpLabel)
+                aload(varKeyBytes)
+                iload(varKeyBytesI)
+                lload(varKeyLong)
+                number(64)
+                iinc(varKeyBytesI, 1)
+                iload(varKeyBytesI)
+                number(8)
+                imul()
+                isub()
+                lushr()
+                l2i()
+                i2b()
+                bastore()
+                agoto(covertLong2ByteForeachLabel)
+            }
 
-        // get encrypted string and store
-        insnBuilder.label(covertLong2ByteForeachJumpLabel) {
-            getStatic(className, encryptedField.name, encryptedField.desc)
-            iload(varIndex)
-            aaload()
-            astore(varEncryptedString)
-        }
+            // get encrypted string and store
+            label(covertLong2ByteForeachJumpLabel) {
+                getstatic(className, encryptedField.name, encryptedField.desc)
+                iload(varIndex)
+                aaload()
+                astore(varEncryptedString)
+            }
 
-        // char[] buffer = new char[varString.length()];
-        insnBuilder.block {
+            // char[] buffer = new char[varString.length()];
             aload(varEncryptedString)
-            invokeVirtual("java/lang/String", "length", "()I")
+            invokevirtual("java/lang/String", "length", "()I")
             newArray(Opcodes.T_CHAR)
             astore(varBuffer)
-        }
 
-        // int i = 0; int j = 0;
-        insnBuilder.block {
+            // int i = 0; int j = 0;
             number(0)
             istore(varForI)
             number(0)
             istore(varForJ)
-        }
 
-        insnBuilder.label(charArrayForeachLabel) {
-            // for (; i < varString.length(); i++)
-            iload(varForI)
-            aload(varEncryptedString)
-            invokeVirtual("java/lang/String", "length", "()I")
-            if_icmpge(charArrayForeachJumpLabel)
-            // if (j == 8) j = 0
-            iload(varForJ)
-            number(8)
-            if_icmpne(ifJNotEQ8Label)
-            number(0)
-            istore(varForJ)
-
-            // int xorKey = keyMap[(i ^ varIndex ^ keyOfClass) & 0xFF]; but implemented by using switch
-            label(ifJNotEQ8Label) {
+            label(charArrayForeachLabel) {
+                // for (; i < varString.length(); i++)
                 iload(varForI)
-                iload(varIndex)
-                ixor()
-                number(keyOfClass)
-                ixor()
-                number(0xFF)
-                iand()
-                tableSwitch(0, 254, switchLabels.last(), *switchLabels.copyOfRange(0, 255))
+                aload(varEncryptedString)
+                invokevirtual("java/lang/String", "length", "()I")
+                if_icmpge(charArrayForeachJumpLabel)
+                // if (j == 8) j = 0
+                iload(varForJ)
+                number(8)
+                if_icmpne(ifJNotEQ8Label)
+                number(0)
+                istore(varForJ)
 
-                for ((index, switchLabel) in switchLabels.withIndex()) {
-                    label(switchLabel) {
-                        number(keyMap[index])
-                        istore(varXorKey)
+                // int xorKey = keyMap[(i ^ varIndex ^ keyOfClass) & 0xFF]; but implemented by using switch
+                label(ifJNotEQ8Label) {
+                    iload(varForI)
+                    iload(varIndex)
+                    ixor()
+                    number(keyOfClass)
+                    ixor()
+                    number(0xFF)
+                    iand()
+                    tableswitch(0, 254, switchLabels.last(), *switchLabels.copyOfRange(0, 255))
 
-                        if (index != switchLabels.lastIndex) {
-                            agoto(keyMapSwitchDefaultLabel)
+                    for ((index, switchLabel) in switchLabels.withIndex()) {
+                        label(switchLabel) {
+                            number(keyMap[index])
+                            istore(varXorKey)
+
+                            if (index != switchLabels.lastIndex) {
+                                agoto(keyMapSwitchDefaultLabel)
+                            }
                         }
                     }
                 }
+
+                label(keyMapSwitchDefaultLabel) {
+                    // Decrypt core
+                    aload(varBuffer)
+                    iload(varForI)
+                    aload(varEncryptedString)
+                    iload(varForI)
+                    invokevirtual("java/lang/String", "charAt", "(I)C")
+                    number(keyOfClass)
+                    ixor()
+                    iload(varXorKey)
+                    ixor()
+                    aload(varKeyBytes)
+                    iload(varForJ)
+                    baload()
+                    ixor()
+                    i2c()
+                    castore()
+                }
+
+                // Return to charArrayForeachLabel
+                iinc(varForI, 1)
+                iinc(varForJ, 1)
+                agoto(charArrayForeachLabel)
             }
 
-            label(keyMapSwitchDefaultLabel) {
-                // Decrypt core
+            label(charArrayForeachJumpLabel) {
+                // Store decrypted string
+                getstatic(className, decryptedField.name, decryptedField.desc)
+                iload(varIndex)
+                anew("java/lang/String")
+                dup()
                 aload(varBuffer)
-                iload(varForI)
-                aload(varEncryptedString)
-                iload(varForI)
-                invokeVirtual("java/lang/String", "charAt", "(I)C")
-                number(keyOfClass)
-                ixor()
-                iload(varXorKey)
-                ixor()
-                aload(varKeyBytes)
-                iload(varForJ)
-                baload()
-                ixor()
-                i2c()
-                castore()
+                invokespecial("java/lang/String", "<init>", "([C)V")
+                invokevirtual("java/lang/String", "intern", "()Ljava/lang/String;")
+                dup()
+                astore(varDecryptedString)
+                aastore()
             }
 
-            // Return to charArrayForeachLabel
-            iinc(varForI, 1)
-            iinc(varForJ, 1)
-            agoto(charArrayForeachLabel)
-        }
-
-        insnBuilder.label(charArrayForeachJumpLabel) {
-            // Store decrypted string
-            getStatic(className, decryptedField.name, decryptedField.desc)
-            iload(varIndex)
-            anew("java/lang/String")
-            dup()
-            aload(varBuffer)
-            invokeSpecial("java/lang/String", "<init>", "([C)V")
-            invokeVirtual("java/lang/String", "intern", "()Ljava/lang/String;")
-            dup()
-            astore(varDecryptedString)
-            aastore()
-        }
-
-        insnBuilder.label(returnLabel) {
-            aload(varDecryptedString)
-            areturn()
+            label(returnLabel) {
+                aload(varDecryptedString)
+                areturn()
+            }
         }
 
         return methodBuilder.build()
@@ -325,7 +313,7 @@ class StringEncryption(
         return InstructionBuilder.buildInsnList {
             label(LabelNode())
             number(plainTexts.size)
-            anewArray("java/lang/String")
+            anewarray("java/lang/String")
             dup()
 
             for ((index, plaintext) in plainTexts.values.withIndex()) {
@@ -337,11 +325,11 @@ class StringEncryption(
                     dup()
                 }
             }
-            putStatic(classWrapper.getClassName(), encryptedField.name, encryptedField.desc)
+            putstatic(classWrapper.getClassName(), encryptedField.name, encryptedField.desc)
 
             number(plainTexts.size)
-            anewArray("java/lang/String")
-            putStatic(classWrapper.getClassName(), decryptedField.name, decryptedField.desc)
+            anewarray("java/lang/String")
+            putstatic(classWrapper.getClassName(), decryptedField.name, decryptedField.desc)
         }
     }
 

@@ -2,7 +2,6 @@ package org.g0to.core
 
 import com.google.gson.annotations.SerializedName
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.BiConsumer
 import org.g0to.classloaders.ExtLoader
 import org.g0to.classloaders.GlobalClassManager
 import org.g0to.classloaders.SyntheticClasses
@@ -23,7 +22,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.function.Consumer
 
 class Core(
     val conf: Configuration
@@ -98,7 +96,7 @@ class Core(
         }
 
         if (conf.analyze) {
-            logger.info("Analyzer classes")
+            logger.info("Analyze classes")
 
             foreachTargetMethods { classWrapper, methodNode ->
                 try {
@@ -114,17 +112,17 @@ class Core(
         }
     }
 
-    fun foreachTargetMethods(consumer: BiConsumer<ClassWrapper, MethodNode>) {
-        for (classWrapper in targetJar.getClasses()) {
-            for (method in classWrapper.classNode.methods) {
-                consumer.accept(classWrapper, method)
+    inline fun foreachTargetMethods(block: (ClassWrapper, MethodNode) -> Unit) {
+        foreachTargetClasses { classWrapper ->
+            classWrapper.getMethods().forEach { method ->
+                block(classWrapper, method)
             }
         }
     }
 
-    fun foreachTargetClasses(consumer: Consumer<ClassWrapper>) {
+    inline fun foreachTargetClasses(block: (ClassWrapper) -> Unit) {
         for (classWrapper in targetJar.getClasses()) {
-            consumer.accept(classWrapper)
+            block(classWrapper)
         }
     }
 

@@ -6,9 +6,9 @@ import org.g0to.core.Core
 import org.g0to.dictionary.ClassDictionary
 import org.g0to.transformer.Transformer
 import org.g0to.utils.ASMUtils
-import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
 import org.g0to.utils.Utils
+import org.g0to.utils.extensions.modify
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.AbstractInsnNode
@@ -37,9 +37,7 @@ class InvokeProxy(
             val dictionary = core.conf.dictionary.newClassDictionary(classWrapper)
             val methodMap = HashMap<String, MethodNode>()
 
-            classWrapper.getMethods().forEach { method ->
-                val buffer = InstructionBuffer(method)
-
+            classWrapper.getMethods().forEach { method -> method.modify { buffer ->
                 for (instruction in method.instructions) {
                     when (instruction) {
                         is MethodInsnNode -> {
@@ -52,11 +50,11 @@ class InvokeProxy(
                             }
 
                             if (Utils.isOneOf(
-                                instruction.opcode,
-                                Opcodes.INVOKESTATIC,
-                                Opcodes.INVOKEVIRTUAL,
-                                Opcodes.INVOKEINTERFACE
-                            )) {
+                                    instruction.opcode,
+                                    Opcodes.INVOKESTATIC,
+                                    Opcodes.INVOKEVIRTUAL,
+                                    Opcodes.INVOKEINTERFACE
+                                )) {
                                 val isStatic = instruction.opcode == Opcodes.INVOKESTATIC
                                 val desc = if (isStatic) {
                                     instruction.desc
@@ -146,9 +144,7 @@ class InvokeProxy(
                         }
                     }
                 }
-
-                buffer.apply()
-            }
+            } }
 
             for (proxyMethod in methodMap.values) {
                 classWrapper.addMethod(proxyMethod)
@@ -184,7 +180,7 @@ class InvokeProxy(
             val builder = InstructionBuilder()
 
             setupArgument(proxyMethod, builder, desc)
-            builder.ainsn(dest)
+            builder.addInstruction(dest)
             builder.xreturn(Type.getReturnType(desc))
 
             proxyMethod.instructions.add(builder.build())

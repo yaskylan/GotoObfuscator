@@ -7,6 +7,7 @@ import org.g0to.transformer.Transformer
 import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
 import org.g0to.utils.ValueWrapper
+import org.g0to.utils.extensions.modify
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.AbstractInsnNode
 import org.objectweb.asm.tree.InsnNode
@@ -35,9 +36,7 @@ class NumberEncryption(
         val accumulatedFloat = ValueWrapper(0)
         val accumulatedDouble = ValueWrapper(0)
 
-        core.foreachTargetMethods { _, methodNode ->
-            val buffer = InstructionBuffer(methodNode)
-
+        core.foreachTargetMethods { _, methodNode -> methodNode.modify { buffer ->
             for (instruction in methodNode.instructions) {
                 when (instruction) {
                     is InsnNode -> {
@@ -79,9 +78,7 @@ class NumberEncryption(
                     }
                 }
             }
-
-            buffer.apply()
-        }
+        } }
 
         logger.info("Encrypted ${accumulatedInt.value} Int, ${accumulatedLong.value} Long, ${accumulatedFloat.value} Float, ${accumulatedDouble.value} Double")
         logger.info("Total ${accumulatedInt.value + accumulatedLong.value + accumulatedFloat.value + accumulatedDouble.value}")
@@ -130,9 +127,18 @@ class NumberEncryption(
             number(value xor key)
             number(key)
             ixor()
+            /*
+            val shiftBits = ThreadLocalRandom.current().nextInt(1, 31)
+
+            number(value ushr shiftBits)
+            number(shiftBits)
+            ishl()
+            number(value or ((1 shl shiftBits) - 1))
+            ior()
+            */
 
             if (isFloat) {
-                invokeStatic("java/lang/Float", "intBitsToFloat", "(I)F")
+                invokestatic("java/lang/Float", "intBitsToFloat", "(I)F")
             }
         })
     }
@@ -146,7 +152,7 @@ class NumberEncryption(
             lxor()
 
             if (isFloat) {
-                invokeStatic("java/lang/Double", "longBitsToDouble", "(J)D")
+                invokestatic("java/lang/Double", "longBitsToDouble", "(J)D")
             }
         })
     }

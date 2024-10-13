@@ -64,7 +64,7 @@ fun processMakeConcatWithConstants(classWrapper: ClassWrapper,
     val bootstrap = createIndyBootstrap(bootstrapName, constantList)
 
     buffer.replace(instruction, InstructionBuilder.buildInsnList {
-        invokeDynamic(
+        invokedynamic(
             instruction.name,
             instruction.desc,
             Handle(
@@ -83,26 +83,24 @@ fun processMakeConcatWithConstants(classWrapper: ClassWrapper,
 
 private fun createIndyBootstrap(name: String,
                                 constantList: ArrayList<String>): MethodNode {
-    val methodBuilder = MethodBuilder(
-        Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
-        name,
-        "(Ljava/lang/invoke/MethodHandles\$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;)Ljava/lang/invoke/CallSite;",
-        null,
-        null
-    )
+    val methodBuilder = MethodBuilder().visit {
+        this.access = Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC
+        this.name = name
+        this.desc = "(Ljava/lang/invoke/MethodHandles\$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;)Ljava/lang/invoke/CallSite;"
+    }
 
-    val varCaller = methodBuilder.allocVariable()
-    val varName = methodBuilder.allocVariable()
-    val varType = methodBuilder.allocVariable()
-    val varRecipe = methodBuilder.allocVariable()
+    val varCaller = methodBuilder.allocSlot()
+    val varName = methodBuilder.allocSlot()
+    val varType = methodBuilder.allocSlot()
+    val varRecipe = methodBuilder.allocSlot()
 
-    methodBuilder.getInstructionBuilder().block {
+    methodBuilder.instructions {
         aload(varCaller)
         aload(varName)
         aload(varType)
         aload(varRecipe)
         number(constantList.size)
-        anewArray("java/lang/Object")
+        anewarray("java/lang/Object")
         dup()
 
         for ((index, constant) in constantList.withIndex()) {
@@ -115,7 +113,7 @@ private fun createIndyBootstrap(name: String,
             }
         }
 
-        invokeStatic(
+        invokestatic(
             "java/lang/invoke/StringConcatFactory",
             "makeConcatWithConstants",
             "(Ljava/lang/invoke/MethodHandles\$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"

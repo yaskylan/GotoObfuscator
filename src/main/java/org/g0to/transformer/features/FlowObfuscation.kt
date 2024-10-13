@@ -3,8 +3,8 @@ package org.g0to.transformer.features
 import org.g0to.conf.transformer.settings.TransformerBaseSetting
 import org.g0to.core.Core
 import org.g0to.transformer.Transformer
-import org.g0to.utils.InstructionBuffer
 import org.g0to.utils.InstructionBuilder
+import org.g0to.utils.extensions.modify
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
@@ -19,9 +19,7 @@ class FlowObfuscation(
     override fun run(core: Core) {
         var accumulated = 0
 
-        core.foreachTargetMethods { _, method ->
-            val buffer = InstructionBuffer(method)
-
+        core.foreachTargetMethods { _, method -> method.modify { buffer ->
             for (instruction in method.instructions) {
                 when (instruction) {
                     is JumpInsnNode -> {
@@ -42,7 +40,7 @@ class FlowObfuscation(
 
                         builder.block {
                             number(insertPosition)
-                            tableSwitch(0, trapLabels.size - 1, trapLabels[insertPosition], *Array(trapLabels.size) {
+                            tableswitch(0, trapLabels.size - 1, trapLabels[insertPosition], *Array(trapLabels.size) {
                                 if (it == insertPosition) {
                                     nextLabel
                                 } else {
@@ -53,9 +51,9 @@ class FlowObfuscation(
 
                         for (trapLabel in trapLabels) {
                             builder.label(trapLabel) {
-                                getStatic("java/lang/System", "out", "Ljava/io/PrintStream;")
+                                getstatic("java/lang/System", "out", "Ljava/io/PrintStream;")
                                 number(ThreadLocalRandom.current().nextInt())
-                                invokeVirtual("java/io/PrintStream", "println", "(I)V")
+                                invokevirtual("java/io/PrintStream", "println", "(I)V")
                                 number(0)
                                 ifeq(instruction.label)
                                 agoto(trapLabels.random(ThreadLocalRandom.current().asKotlinRandom()))
@@ -72,9 +70,7 @@ class FlowObfuscation(
                     }
                 }
             }
-
-            buffer.apply()
-        }
+        } }
 
         logger.info("Processed $accumulated if instruction")
     }
