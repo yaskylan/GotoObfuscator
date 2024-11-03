@@ -32,9 +32,11 @@ class Debug(
         }
 
         core.foreachTargetClasses { cw ->
-            cw.getMethods().reversedFilteredForeach({ it.isAbstract() || it.isNative() }) { mt ->
-                generateDebugInfoForMethod(classTree, cw, mt)
-            }
+            cw.getMethods().asSequence()
+                .filterNot { it.isAbstract() || it.isNative() }
+                .forEach { mt ->
+                    generateDebugInfoForMethod(classTree, cw, mt)
+                }
         }
 
         core.syntheticClasses.addClassNode(generateDebugClass())
@@ -69,14 +71,14 @@ class Debug(
         }
 
         mt.modify { buffer ->
-            mt.instructions.filteredForeach({ it is LineNumberNode }) { instruction ->
-                instruction as LineNumberNode
-
-                buffer.insert(instruction, InstructionBuilder.buildInsnList {
-                    ldc("Line " + instruction.line)
-                    invokestatic("GotoDebug", "___MARK___", "(Ljava/lang/String;)V")
-                })
-            }
+            mt.instructions.asSequence()
+                .filter { it is LineNumberNode }
+                .forEach { instruction ->
+                    buffer.insert(instruction, InstructionBuilder.buildInsnList {
+                        ldc("Line " + (instruction as LineNumberNode).line)
+                        invokestatic("GotoDebug", "___MARK___", "(Ljava/lang/String;)V")
+                    })
+                }
         }
     }
 

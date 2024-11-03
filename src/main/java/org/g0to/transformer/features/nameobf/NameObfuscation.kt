@@ -9,7 +9,6 @@ import org.g0to.dictionary.Dictionary
 import org.g0to.exclusion.ExclusionManager
 import org.g0to.transformer.Transformer
 import org.g0to.utils.TextWriter
-import org.g0to.utils.extensions.reversedFilteredForeach
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.tree.ClassNode
 import java.io.IOException
@@ -77,53 +76,56 @@ class NameObfuscation(
 
             val executor = Executors.newFixedThreadPool(setting.threadPoolSize)
 
-            classTree.classes.values.reversedFilteredForeach({
-                it.isExternal() || it.isModule()
-            }) { classStruct ->
-                classStruct.getMethods().reversedFilteredForeach({
-                    !it.shouldRename()
-                    || exclusionManager.isExcludedMethod(it.owner.getClassName(), it.name(), it.desc())
-                    || it.isStatic()
-                    || it.isPrivate()
-                }) { method ->
-                    executor.execute {
-                        logger.trace("[Multithreading] Build relative methods map for {}", method.owner.getClassName() + "." + method.name() + method.desc())
+            classTree.classes.values.asSequence()
+                .filterNot { it.isExternal() || it.isModule() }
+                .forEach { classStruct ->
+                    classStruct.getMethods().asSequence()
+                        .filterNot {
+                            !it.shouldRename()
+                            || exclusionManager.isExcludedMethod(it.owner.getClassName(), it.name(), it.desc())
+                            || it.isStatic()
+                            || it.isPrivate()
+                        }.forEach { method ->
+                            executor.execute {
+                                logger.trace("[Multithreading] Build relative methods map for {}", method.owner.getClassName() + "." + method.name() + method.desc())
 
-                        relativeMethodsMap[method] = HashSet<MethodStruct>().apply {
-                            searchRelativeMethods(
-                                method.owner,
-                                method.name(),
-                                method.desc(),
-                                this,
-                                HashSet()
-                            )
+                                relativeMethodsMap[method] = HashSet<MethodStruct>().apply {
+                                    searchRelativeMethods(
+                                        method.owner,
+                                        method.name(),
+                                        method.desc(),
+                                        this,
+                                        HashSet()
+                                    )
+                                }
+                            }
                         }
-                    }
                 }
-            }
 
             executor.shutdown()
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
         }
 
         logger.info("Picking name")
-        classTree.classes.values.reversedFilteredForeach({ it.isExternal() || it.isModule() }) { classStruct ->
-            if (setting.renameClass) {
-                renameClass(classStruct, classDictionary)
-            }
+        classTree.classes.values.asSequence()
+            .filterNot { it.isExternal() || it.isModule() }
+            .forEach { classStruct ->
+                if (setting.renameClass) {
+                    renameClass(classStruct, classDictionary)
+                }
 
-            if (setting.renameField) {
-                for (field in classStruct.getFields()) {
-                    renameField(field, fieldDictionary)
+                if (setting.renameField) {
+                    for (field in classStruct.getFields()) {
+                        renameField(field, fieldDictionary)
+                    }
+                }
+
+                if (setting.renameMethod) {
+                    for (method in classStruct.getMethods()) {
+                        renameMethod(method, methodDictionary, relativeMethodsMap)
+                    }
                 }
             }
-
-            if (setting.renameMethod) {
-                for (method in classStruct.getMethods()) {
-                    renameMethod(method, methodDictionary, relativeMethodsMap)
-                }
-            }
-        }
     }
 
     private fun renameClass(classStruct: ClassStruct, dictionary: Dictionary) {

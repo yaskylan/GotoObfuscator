@@ -78,6 +78,14 @@ class ClassWrapper(
         }.toByteArray()
     }
 
+    fun isAnnotationPresent(annotationName: String): Boolean {
+        val desc = "L$annotationName;"
+
+        return classNode.invisibleAnnotations.find { it.desc == desc }?.let { true }
+            ?: classNode.visibleAnnotations.find { it.desc == desc }?.let { true }
+            ?: false
+    }
+
     fun isExternal(): Boolean {
         return classLoader is ExtLoader
     }

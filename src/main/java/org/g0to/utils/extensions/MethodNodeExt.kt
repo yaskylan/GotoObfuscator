@@ -15,4 +15,12 @@ fun MethodNode.isStrict() = Modifier.isStrict(access)
 fun MethodNode.isSynthetic() = (access and Opcodes.ACC_SYNTHETIC) != 0
 fun MethodNode.isInitializer() = name == "<init>" || name == "<clinit>"
 
+fun MethodNode.isAnnotationPresent(annotationName: String): Boolean {
+    val desc = "L$annotationName;"
+
+    return this.invisibleAnnotations.find { it.desc == desc }?.let { true }
+        ?: this.visibleAnnotations.find { it.desc == desc }?.let { true }
+        ?: false
+}
+
 fun MethodNode.modify(block: (InstructionBuffer) -> Unit) = InstructionBuffer(this).apply(block).apply()
