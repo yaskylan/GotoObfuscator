@@ -2,17 +2,13 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 plugins {
-    kotlin("jvm") version "2.0.0"
+    kotlin("jvm") version "2.0.21"
     id("java")
     id("com.gradleup.shadow") version "8.3.2"
 }
 
 group = "org.g0to"
 version = "1.0.1"
-
-tasks.withType<JavaCompile> {
-    options.release.set(21)
-}
 
 tasks.withType<Copy> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -41,6 +37,15 @@ tasks {
                 into("")
             }
         }
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -76,8 +81,4 @@ dependencies {
     implementation("commons-cli:commons-cli:1.8.0")
 
     implementation("com.google.code.gson:gson:2.11.0")
-}
-
-kotlin {
-    jvmToolchain(21)
 }
