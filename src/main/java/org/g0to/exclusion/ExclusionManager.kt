@@ -131,7 +131,8 @@ class ExclusionManager(excludeSetting: ExcludeSetting?) {
                             return Pair(compareObject, true)
                         }
                         packageName != null -> {
-                            if (packageName.startsWith(compareObject.packageName)) {
+                            if (packageName.split('/')[0] == compareObject.packageName.split("/")[0]
+                                && packageName.startsWith(compareObject.packageName)) {
                                 return Pair(compareObject, true)
                             }
                         }

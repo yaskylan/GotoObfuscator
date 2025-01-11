@@ -73,9 +73,13 @@ class ClassWrapper(
     }
 
     fun toByteArray(): ByteArray {
-        return ModifiedClassWriter(core, ClassWriter.COMPUTE_FRAMES).apply {
-            classNode.accept(this)
-        }.toByteArray()
+        try {
+            return ModifiedClassWriter(core, ClassWriter.COMPUTE_FRAMES).apply {
+                classNode.accept(this)
+            }.toByteArray()
+        } catch (e: Throwable) {
+            throw RuntimeException("Can't write class ${getClassName()}", e)
+        }
     }
 
     fun isAnnotationPresent(annotationName: String): Boolean {
